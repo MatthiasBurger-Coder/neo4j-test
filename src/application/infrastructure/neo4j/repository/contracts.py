@@ -1,7 +1,7 @@
-"""Composable contracts for building statements and projecting results."""
+"""Composable contracts for building statements, projecting results, and executing repository work."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from typing import Generic, Protocol, TypeVar
 
 from src.application.infrastructure.neo4j.repository.result import Neo4jExecutionResult
 from src.application.infrastructure.neo4j.repository.statement import CypherStatement
@@ -9,6 +9,7 @@ from src.application.infrastructure.neo4j.repository.statement import CypherStat
 
 TRequest = TypeVar("TRequest")
 TResult = TypeVar("TResult")
+TProjectedResult = TypeVar("TProjectedResult")
 
 
 class CypherStatementBuilder(ABC, Generic[TRequest]):
@@ -25,3 +26,27 @@ class Neo4jResultProjector(ABC, Generic[TResult]):
     @abstractmethod
     def project(self, execution_result: Neo4jExecutionResult) -> TResult:
         """Convert a plain Neo4j execution result into the adapter output model."""
+
+
+class Neo4jRepositoryExecutorProtocol(Protocol):
+    """Structural contract for repository executors used by the adapter base classes."""
+
+    def execute_read(
+        self,
+        *,
+        repository_name: str,
+        operation_name: str,
+        statement: CypherStatement,
+        result_projector: "Neo4jResultProjector[TProjectedResult]",
+    ) -> TProjectedResult:
+        """Execute and project a read-side repository statement."""
+
+    def execute_write(
+        self,
+        *,
+        repository_name: str,
+        operation_name: str,
+        statement: CypherStatement,
+        result_projector: "Neo4jResultProjector[TProjectedResult]",
+    ) -> TProjectedResult:
+        """Execute and project a write-side repository statement."""

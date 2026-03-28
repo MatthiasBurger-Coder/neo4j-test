@@ -4,9 +4,9 @@ from typing import Generic, TypeVar
 
 from src.application.infrastructure.neo4j.repository.contracts import (
     CypherStatementBuilder,
+    Neo4jRepositoryExecutorProtocol,
     Neo4jResultProjector,
 )
-from src.application.infrastructure.neo4j.repository.executor import Neo4jRepositoryExecutor
 from src.application.port.outbound.repository.read_repository import ReadRepositoryPort
 from src.application.port.outbound.repository.write_repository import WriteRepositoryPort
 
@@ -25,7 +25,7 @@ class Neo4jReadRepositoryAdapter(ReadRepositoryPort[TRequest, TResult], Generic[
         operation_name: str,
         statement_builder: CypherStatementBuilder[TRequest],
         result_projector: Neo4jResultProjector[TResult],
-        repository_executor: Neo4jRepositoryExecutor,
+        repository_executor: Neo4jRepositoryExecutorProtocol,
     ) -> None:
         self._repository_name = self._require_non_blank("repository_name", repository_name)
         self._operation_name = self._require_non_blank("operation_name", operation_name)
@@ -61,7 +61,7 @@ class Neo4jWriteRepositoryAdapter(WriteRepositoryPort[TRequest, TResult], Generi
         operation_name: str,
         statement_builder: CypherStatementBuilder[TRequest],
         result_projector: Neo4jResultProjector[TResult],
-        repository_executor: Neo4jRepositoryExecutor,
+        repository_executor: Neo4jRepositoryExecutorProtocol,
     ) -> None:
         self._repository_name = self._require_non_blank("repository_name", repository_name)
         self._operation_name = self._require_non_blank("operation_name", operation_name)

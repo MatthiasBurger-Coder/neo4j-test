@@ -1,7 +1,11 @@
 """Reusable Neo4j repository foundation for read and write adapters."""
 
 from src.application.infrastructure.neo4j.repository.adapter import Neo4jReadRepositoryAdapter, Neo4jWriteRepositoryAdapter
-from src.application.infrastructure.neo4j.repository.contracts import CypherStatementBuilder, Neo4jResultProjector
+from src.application.infrastructure.neo4j.repository.contracts import (
+    CypherStatementBuilder,
+    Neo4jRepositoryExecutorProtocol,
+    Neo4jResultProjector,
+)
 from src.application.infrastructure.neo4j.repository.error import (
     Neo4jReadRepositoryError,
     Neo4jRepositoryError,
@@ -19,6 +23,7 @@ __all__ = [
     "Neo4jQueryCounters",
     "Neo4jReadRepositoryAdapter",
     "Neo4jReadRepositoryError",
+    "Neo4jRepositoryExecutorProtocol",
     "Neo4jRepositoryError",
     "Neo4jRepositoryExecutor",
     "Neo4jResultProjector",
