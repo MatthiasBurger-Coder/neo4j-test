@@ -27,6 +27,8 @@ class Neo4jConnectionFactory:
             max_connection_lifetime=self._config.max_connection_lifetime,
             max_connection_pool_size=self._config.max_connection_pool_size,
             connection_acquisition_timeout=self._config.connection_acquisition_timeout,
+            notifications_min_severity=self._config.notifications_min_severity,
+            warn_notification_severity=self._config.warn_notification_severity,
         )
 
         driver.verify_connectivity()

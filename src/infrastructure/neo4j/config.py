@@ -13,6 +13,8 @@ class Neo4jConfig:
     max_connection_lifetime: int = 3600
     max_connection_pool_size: int = 50
     connection_acquisition_timeout: int = 30
+    notifications_min_severity: str = "OFF"
+    warn_notification_severity: str = "OFF"
 
     def __post_init__(self) -> None:
         """Validate connection settings before they are consumed by infrastructure adapters."""
@@ -51,6 +53,24 @@ class Neo4jConfig:
             field_name="connection_acquisition_timeout",
             value=self.connection_acquisition_timeout,
         )
+        object.__setattr__(
+            self,
+            "notifications_min_severity",
+            require_non_blank(
+                owner=self.__class__.__name__,
+                field_name="notifications_min_severity",
+                value=self.notifications_min_severity,
+            ),
+        )
+        object.__setattr__(
+            self,
+            "warn_notification_severity",
+            require_non_blank(
+                owner=self.__class__.__name__,
+                field_name="warn_notification_severity",
+                value=self.warn_notification_severity,
+            ),
+        )
 
     @staticmethod
     def from_env() -> "Neo4jConfig":
@@ -62,6 +82,8 @@ class Neo4jConfig:
             max_connection_lifetime=int(os.getenv("NEO4J_MAX_CONNECTION_LIFETIME", "3600")),
             max_connection_pool_size=int(os.getenv("NEO4J_MAX_CONNECTION_POOL_SIZE", "50")),
             connection_acquisition_timeout=int(os.getenv("NEO4J_CONNECTION_ACQUISITION_TIMEOUT", "30")),
+            notifications_min_severity=os.getenv("NEO4J_NOTIFICATIONS_MIN_SEVERITY", "OFF"),
+            warn_notification_severity=os.getenv("NEO4J_WARN_NOTIFICATION_SEVERITY", "OFF"),
         )
 
 
