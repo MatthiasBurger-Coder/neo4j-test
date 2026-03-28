@@ -1,10 +1,10 @@
-"""Enumeration for structured address unit types."""
+"""Enumeration for structured address unit categories."""
 
 from enum import StrEnum
 
 
 class AddressUnitType(StrEnum):
-    """Defines standardized types for address units."""
+    """Defines standardized structured address unit categories."""
 
     BUILDING_SECTION = "BUILDING_SECTION"
     ENTRANCE = "ENTRANCE"

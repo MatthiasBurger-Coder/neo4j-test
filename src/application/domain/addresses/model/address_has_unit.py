@@ -1,15 +1,17 @@
-"""Domain relationship model connecting addresses and structured address units."""
+"""Domain relationship model for address-to-unit links."""
 
 from dataclasses import dataclass
 
+from src.application.domain.addresses.model.node_id import NodeId
+from src.application.domain.addresses.model.relationship_id import RelationshipId
 from src.application.domain.addresses.model.trace_context import TraceContext
 
 
 @dataclass(slots=True)
 class AddressHasUnit:
-    """Represents the relationship stating that an address has a structured unit."""
+    """Represents that an address has a structured address unit."""
 
-    id: str
-    address_id: str
-    address_unit_id: str
+    id: RelationshipId
+    address_id: NodeId
+    address_unit_id: NodeId
     trace_context: TraceContext | None = None

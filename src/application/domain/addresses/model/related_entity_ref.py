@@ -1,11 +1,13 @@
-"""Typed external entity references for cross-domain address assignments."""
+"""Typed references to entities outside the addresses domain."""
 
 from dataclasses import dataclass
 from enum import StrEnum
 
+from src.application.domain.addresses.model.node_id import NodeId
+
 
 class RelatedEntityType(StrEnum):
-    """Defines external entity categories that can relate to an address."""
+    """Defines categories of entities that can be related to an address."""
 
     PERSON = "PERSON"
     COMPANY = "COMPANY"
@@ -16,7 +18,7 @@ class RelatedEntityType(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class RelatedEntityRef:
-    """Immutable, typed reference to an external domain entity."""
+    """Immutable typed reference to an external graph entity."""
 
     entity_type: RelatedEntityType
-    entity_id: str
+    entity_id: NodeId

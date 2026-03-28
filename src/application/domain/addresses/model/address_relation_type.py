@@ -1,10 +1,10 @@
-"""Enumeration for semantic meaning of external address relations."""
+"""Enumeration for semantic meanings of address assignments."""
 
 from enum import StrEnum
 
 
 class AddressRelationType(StrEnum):
-    """Defines the business meaning of an external entity's relation to an address."""
+    """Defines business semantics of an external entity relation to an address."""
 
     RESIDENCE = "RESIDENCE"
     WORKPLACE = "WORKPLACE"
