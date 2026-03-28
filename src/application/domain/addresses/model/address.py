@@ -1,24 +1,18 @@
-from dataclasses import dataclass, field
-from typing import Optional
-from uuid import uuid4
+"""Domain node model for neutral addresses."""
+
+from dataclasses import dataclass
 
 from src.application.domain.addresses.model.geo_location import GeoLocation
 
 
 @dataclass(slots=True)
 class Address:
-    street: str
-    house_number: str
-    postal_code: str
-    city: str
-    country: str
-    geo_location: Optional[GeoLocation] = None
-    id: str = field(default_factory=lambda: str(uuid4()))
+    """Represents an addressable place without external semantic meaning."""
 
-    def full_address(self) -> str:
-        parts = [
-            f"{self.street} {self.house_number}".strip(),
-            f"{self.postal_code} {self.city}".strip(),
-            self.country.strip(),
-        ]
-        return ", ".join(part for part in parts if part.strip())
+    id: str
+    house_number: str
+    geo_location: GeoLocation | None = None
+
+    def has_geo_location(self) -> bool:
+        """Return whether this address includes explicit coordinates."""
+        return self.geo_location is not None
