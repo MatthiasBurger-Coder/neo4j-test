@@ -39,15 +39,13 @@ class _FakeSummary:
     database: str = "neo4j"
 
 
-class _FakeQuery:
-    def __init__(self, text: str, metadata: dict[str, object]) -> None:
-        self.text = text
-        self.metadata = metadata
+class _FakeTransactionWorkFactory:
+    def create(self, *, metadata: dict[str, object], work):
+        def wrapped_work(transaction):
+            return work(transaction)
 
-
-class _FakeQueryFactory:
-    def create(self, *, cypher: str, metadata: dict[str, object]) -> _FakeQuery:
-        return _FakeQuery(text=cypher, metadata=dict(metadata))
+        wrapped_work.metadata = dict(metadata)
+        return wrapped_work
 
 
 class _OSErrorFailureClassifier:
@@ -104,6 +102,7 @@ class _ValueErrorTransaction:
 class _FakeSession:
     def __init__(self, transaction) -> None:
         self._transaction = transaction
+        self.last_work_metadata = None
 
     def __enter__(self):
         return self
@@ -112,9 +111,11 @@ class _FakeSession:
         return None
 
     def execute_read(self, work):
+        self.last_work_metadata = getattr(work, "metadata", None)
         return work(self._transaction)
 
     def execute_write(self, work):
+        self.last_work_metadata = getattr(work, "metadata", None)
         return work(self._transaction)
 
 
@@ -155,7 +156,7 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
                 database_name=session_provider.database,
                 correlation_id_supplier=CorrelationIdContext.get,
             ),
-            query_factory=_FakeQueryFactory(),
+            transaction_work_factory=_FakeTransactionWorkFactory(),
             failure_classifier=_OSErrorFailureClassifier(),
         )
 
@@ -171,8 +172,12 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
 
         self.assertEqual([{"person_id": "p-1"}], result)
         self.assertEqual(Neo4jAccessMode.READ, session_provider.last_mode)
-        self.assertEqual("corr-read-123", transaction.last_query.metadata["correlation_id"])
-        self.assertEqual("person.find_by_id", transaction.last_query.metadata["statement_name"])
+        self.assertEqual("corr-read-123", session.last_work_metadata["correlation_id"])
+        self.assertEqual("person.find_by_id", session.last_work_metadata["statement_name"])
+        self.assertEqual(
+            "MATCH (p:Person {id: $person_id}) RETURN p.id AS person_id",
+            transaction.last_query,
+        )
 
     def test_execute_write_translates_execution_failures(self) -> None:
         session_provider = _FakeSessionProvider(_FakeSession(_OSErrorTransaction()))
@@ -182,7 +187,7 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
                 database_name=session_provider.database,
                 correlation_id_supplier=CorrelationIdContext.get,
             ),
-            query_factory=_FakeQueryFactory(),
+            transaction_work_factory=_FakeTransactionWorkFactory(),
             failure_classifier=_OSErrorFailureClassifier(),
         )
 
@@ -211,7 +216,7 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
                 database_name=session_provider.database,
                 correlation_id_supplier=CorrelationIdContext.get,
             ),
-            query_factory=_FakeQueryFactory(),
+            transaction_work_factory=_FakeTransactionWorkFactory(),
             failure_classifier=_OSErrorFailureClassifier(),
         )
 
@@ -238,7 +243,7 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
                 database_name=session_provider.database,
                 correlation_id_supplier=CorrelationIdContext.get,
             ),
-            query_factory=_FakeQueryFactory(),
+            transaction_work_factory=_FakeTransactionWorkFactory(),
             failure_classifier=_OSErrorFailureClassifier(),
         )
 

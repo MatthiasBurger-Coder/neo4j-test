@@ -7,16 +7,16 @@ from typing import Mapping, TypeVar
 from src.adapters.outbound.persistence.neo4j.repository.access_mode import Neo4jAccessMode
 from src.adapters.outbound.persistence.neo4j.repository.contracts import (
     Neo4jExecutionFailureClassifierProtocol,
-    Neo4jQueryFactoryProtocol,
     Neo4jRepositoryExecutorProtocol,
     Neo4jResultCursorProtocol,
     Neo4jResultProjector,
     Neo4jSessionProviderProtocol,
+    Neo4jTransactionWorkFactoryProtocol,
     Neo4jTransactionProtocol,
 )
 from src.adapters.outbound.persistence.neo4j.repository.driver_integration import (
     Neo4jDriverExecutionFailureClassifier,
-    Neo4jDriverQueryFactory,
+    Neo4jManagedTransactionWorkFactory,
 )
 from src.adapters.outbound.persistence.neo4j.repository.error_translation import Neo4jRepositoryErrorTranslator
 from src.adapters.outbound.persistence.neo4j.repository.operation import (
@@ -45,7 +45,7 @@ class Neo4jRepositoryExecutor(Neo4jRepositoryExecutorProtocol):
         context_factory: Neo4jRepositoryOperationContextFactory | None = None,
         error_translator: Neo4jRepositoryErrorTranslator | None = None,
         logger: logging.Logger | None = None,
-        query_factory: Neo4jQueryFactoryProtocol | None = None,
+        transaction_work_factory: Neo4jTransactionWorkFactoryProtocol | None = None,
         failure_classifier: Neo4jExecutionFailureClassifierProtocol | None = None,
         transaction_strategies: Mapping[
             Neo4jAccessMode,
@@ -59,7 +59,7 @@ class Neo4jRepositoryExecutor(Neo4jRepositoryExecutorProtocol):
         )
         self._error_translator = error_translator or Neo4jRepositoryErrorTranslator()
         self._logger = logger or logging.getLogger(self.__class__.__name__)
-        self._query_factory = query_factory or Neo4jDriverQueryFactory()
+        self._transaction_work_factory = transaction_work_factory or Neo4jManagedTransactionWorkFactory()
         self._failure_classifier = failure_classifier or Neo4jDriverExecutionFailureClassifier()
         self._transaction_strategies = Neo4jAccessModeRegistry(
             registry_name=f"{self.__class__.__name__} transaction strategies",
@@ -134,17 +134,23 @@ class Neo4jRepositoryExecutor(Neo4jRepositoryExecutorProtocol):
         started_at: float,
     ) -> Neo4jExecutionResult:
         transaction_strategy = self._transaction_strategies.get(context.access_mode)
+        work = self._transaction_work_factory.create(
+            metadata={
+                "correlation_id": context.correlation_id,
+                "repository_name": context.repository_name,
+                "operation_name": context.operation_name,
+                "statement_name": context.statement_name,
+            },
+            work=lambda transaction: self._run_statement(
+                transaction=transaction,
+                statement=statement,
+                context=context,
+            ),
+        )
 
         try:
             with self._session_provider.open_session(context.access_mode) as session:
-                return transaction_strategy.execute(
-                    session,
-                    lambda transaction: self._run_statement(
-                        transaction=transaction,
-                        statement=statement,
-                        context=context,
-                    ),
-                )
+                return transaction_strategy.execute(session, work)
         except Exception as error:
             if not self._failure_classifier.is_execution_failure(error):
                 raise
@@ -198,16 +204,8 @@ class Neo4jRepositoryExecutor(Neo4jRepositoryExecutorProtocol):
         statement: CypherStatement,
         context: Neo4jRepositoryOperationContext,
     ) -> Neo4jExecutionResult:
-        query = self._query_factory.create(
-            cypher=statement.cypher,
-            metadata={
-                "correlation_id": context.correlation_id,
-                "repository_name": context.repository_name,
-                "operation_name": context.operation_name,
-                "statement_name": context.statement_name,
-            },
-        )
-        query_result = transaction.run(query, statement.parameters)
+        del context
+        query_result = transaction.run(statement.cypher, statement.parameters)
         return self._materialize_result(query_result=query_result, statement_name=statement.name)
 
     def _materialize_result(

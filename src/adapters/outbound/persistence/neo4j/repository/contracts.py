@@ -56,11 +56,16 @@ class Neo4jRepositoryExecutorProtocol(Protocol):
 
 
 @runtime_checkable
-class Neo4jQueryFactoryProtocol(Protocol):
-    """Creates driver-native query objects without leaking driver imports into the executor base."""
+class Neo4jTransactionWorkFactoryProtocol(Protocol):
+    """Decorates managed transaction work with driver-specific execution metadata."""
 
-    def create(self, *, cypher: str, metadata: Mapping[str, object]) -> object:
-        """Build a query object understood by the active Neo4j driver adapter."""
+    def create(
+        self,
+        *,
+        metadata: Mapping[str, object],
+        work: Callable[["Neo4jTransactionProtocol"], TProjectedResult],
+    ) -> Callable[["Neo4jTransactionProtocol"], TProjectedResult]:
+        """Return transaction work decorated for the active driver adapter."""
 
 
 @runtime_checkable

@@ -4,17 +4,23 @@ from collections.abc import Mapping
 
 from src.adapters.outbound.persistence.neo4j.repository.contracts import (
     Neo4jExecutionFailureClassifierProtocol,
-    Neo4jQueryFactoryProtocol,
+    Neo4jTransactionProtocol,
+    Neo4jTransactionWorkFactoryProtocol,
 )
 
 
-class Neo4jDriverQueryFactory(Neo4jQueryFactoryProtocol):
-    """Builds driver-native query objects only when execution actually needs them."""
+class Neo4jManagedTransactionWorkFactory(Neo4jTransactionWorkFactoryProtocol):
+    """Decorates managed transaction work with Neo4j driver metadata."""
 
-    def create(self, *, cypher: str, metadata: Mapping[str, object]) -> object:
-        from neo4j import Query
+    def create(
+        self,
+        *,
+        metadata: Mapping[str, object],
+        work,
+    ):
+        from neo4j import unit_of_work
 
-        return Query(cypher, metadata=dict(metadata))
+        return unit_of_work(metadata=dict(metadata))(work)
 
 
 class Neo4jDriverExecutionFailureClassifier(Neo4jExecutionFailureClassifierProtocol):
