@@ -2,11 +2,12 @@
 
 from dataclasses import dataclass
 
+from src.application.domain.addresses.model.graph_node import GraphNode
 from src.application.domain.addresses.model.node_id import NodeId
 
 
 @dataclass(slots=True)
-class City:
+class City(GraphNode):
     """Represents a city as an independent graph node."""
 
     id: NodeId
@@ -15,7 +16,7 @@ class City:
     postal_code: str | None = None
 
     def __post_init__(self) -> None:
-        """Validate mandatory city attributes."""
+        """Validate mandatory and optional city attributes."""
         if self.name.strip() == "":
             raise ValueError("City name must not be blank")
         if self.country.strip() == "":

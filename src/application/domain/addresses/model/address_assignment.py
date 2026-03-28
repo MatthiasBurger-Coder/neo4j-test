@@ -1,9 +1,10 @@
 """Domain relationship model for semantic external-entity address assignments."""
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from src.application.domain.addresses.model.address_relation_type import AddressRelationType
+from src.application.domain.addresses.model.graph_relationship import GraphRelationship
 from src.application.domain.addresses.model.node_id import NodeId
 from src.application.domain.addresses.model.related_entity_ref import RelatedEntityRef
 from src.application.domain.addresses.model.relationship_id import RelationshipId
@@ -11,7 +12,7 @@ from src.application.domain.addresses.model.trace_context import TraceContext
 
 
 @dataclass(slots=True)
-class AddressAssignment:
+class AddressAssignment(GraphRelationship):
     """Represents that an external entity has a semantic relation to an address."""
 
     id: RelationshipId
@@ -49,4 +50,4 @@ class AddressAssignment:
             return datetime.now(self.valid_from.tzinfo)
         if self.valid_to is not None and self.valid_to.tzinfo is not None:
             return datetime.now(self.valid_to.tzinfo)
-        return datetime.now(UTC)
+        return datetime.now(timezone.utc)

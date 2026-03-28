@@ -1,9 +1,9 @@
 """Enumeration for semantic meanings of address assignments."""
 
-from enum import StrEnum
+from enum import Enum
 
 
-class AddressRelationType(StrEnum):
+class AddressRelationType(str, Enum):
     """Defines business semantics of an external entity relation to an address."""
 
     RESIDENCE = "RESIDENCE"

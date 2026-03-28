@@ -8,9 +8,12 @@ from src.application.domain.addresses.model.address_on_street import AddressOnSt
 from src.application.domain.addresses.model.address_relation_type import AddressRelationType
 from src.application.domain.addresses.model.address_unit import AddressUnit
 from src.application.domain.addresses.model.address_unit_type import AddressUnitType
+from src.application.domain.addresses.model.address_unit_within_unit import AddressUnitWithinUnit
 from src.application.domain.addresses.model.building import Building
 from src.application.domain.addresses.model.city import City
 from src.application.domain.addresses.model.geo_location import GeoLocation
+from src.application.domain.addresses.model.graph_node import GraphNode
+from src.application.domain.addresses.model.graph_relationship import GraphRelationship
 from src.application.domain.addresses.model.node_id import NodeId
 from src.application.domain.addresses.model.related_entity_ref import RelatedEntityRef, RelatedEntityType
 from src.application.domain.addresses.model.relationship_id import RelationshipId
@@ -27,9 +30,12 @@ __all__ = [
     "AddressRelationType",
     "AddressUnit",
     "AddressUnitType",
+    "AddressUnitWithinUnit",
     "Building",
     "City",
     "GeoLocation",
+    "GraphNode",
+    "GraphRelationship",
     "NodeId",
     "RelatedEntityRef",
     "RelatedEntityType",

@@ -1,4 +1,4 @@
-"""Domain relationship model for address-to-street links."""
+"""Domain relationship model for hierarchical address unit composition."""
 
 from dataclasses import dataclass
 
@@ -9,10 +9,10 @@ from src.application.domain.addresses.model.trace_context import TraceContext
 
 
 @dataclass(slots=True)
-class AddressOnStreet(GraphRelationship):
-    """Represents that an address lies on a street."""
+class AddressUnitWithinUnit(GraphRelationship):
+    """Represents that one address unit is structurally within another unit."""
 
     id: RelationshipId
-    address_id: NodeId
-    street_id: NodeId
+    parent_unit_id: NodeId
+    child_unit_id: NodeId
     trace_context: TraceContext | None = None
