@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from src.application.addresses.address_create_port import AddressCreatePort
+from src.application.addresses.address_create_service import AddressCreateService
 from src.application.addresses.address_query_service import AddressQueryService
 from src.application.addresses.address_read_port import AddressReadPort
 from src.infrastructure.bootstrap.application_repositories import ApplicationRepositories
@@ -13,6 +15,7 @@ class AddressServices:
     """Provides address-related application services."""
 
     query: AddressReadPort
+    create: AddressCreatePort
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +32,10 @@ def create_application_services(*, repositories: ApplicationRepositories) -> App
             query=AddressQueryService(
                 repositories.addresses.read,
                 logger=LoggerFactory.get_logger(AddressQueryService.__name__),
+            ),
+            create=AddressCreateService(
+                repositories.addresses.write,
+                logger=LoggerFactory.get_logger(AddressCreateService.__name__),
             )
         )
     )

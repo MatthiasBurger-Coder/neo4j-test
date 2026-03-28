@@ -8,7 +8,7 @@ from src.adapters.inbound.http.request import HttpRequest
 from src.adapters.inbound.http.response import JsonResponse, json_not_found
 
 
-RouteHandler = Callable[[dict[str, str]], JsonResponse]
+RouteHandler = Callable[[HttpRequest, dict[str, str]], JsonResponse]
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,7 +70,7 @@ class HttpRouter:
         for route in self._routes:
             route_match = route.match(request)
             if route_match is not None:
-                return route_match.handler(route_match.path_parameters)
+                return route_match.handler(request, route_match.path_parameters)
         return json_not_found(code="route_not_found", message="Route not found")
 
 

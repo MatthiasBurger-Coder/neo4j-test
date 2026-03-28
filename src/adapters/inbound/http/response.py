@@ -26,25 +26,43 @@ def json_ok(payload: Any) -> JsonResponse:
     return JsonResponse(status_code=HTTPStatus.OK, payload=payload)
 
 
-def json_bad_request(*, code: str, message: str) -> JsonResponse:
-    """Create a JSON response for invalid client input."""
+def json_created(payload: Any) -> JsonResponse:
+    """Create a created JSON response."""
+    return JsonResponse(status_code=HTTPStatus.CREATED, payload=payload)
+
+
+def json_error(*, status_code: int, code: str, message: str) -> JsonResponse:
+    """Create a JSON response for structured API errors."""
     return JsonResponse(
-        status_code=HTTPStatus.BAD_REQUEST,
+        status_code=status_code,
         payload={"error": {"code": code, "message": message}},
     )
+
+
+def json_bad_request(*, code: str, message: str) -> JsonResponse:
+    """Create a JSON response for invalid client input."""
+    return json_error(status_code=HTTPStatus.BAD_REQUEST, code=code, message=message)
 
 
 def json_not_found(*, code: str, message: str) -> JsonResponse:
     """Create a JSON response for missing resources."""
-    return JsonResponse(
-        status_code=HTTPStatus.NOT_FOUND,
-        payload={"error": {"code": code, "message": message}},
-    )
+    return json_error(status_code=HTTPStatus.NOT_FOUND, code=code, message=message)
+
+
+def json_unsupported_media_type(*, code: str, message: str) -> JsonResponse:
+    """Create a JSON response for unsupported request media types."""
+    return json_error(status_code=HTTPStatus.UNSUPPORTED_MEDIA_TYPE, code=code, message=message)
+
+
+def json_unprocessable_entity(*, code: str, message: str) -> JsonResponse:
+    """Create a JSON response for semantically invalid client input."""
+    return json_error(status_code=HTTPStatus.UNPROCESSABLE_ENTITY, code=code, message=message)
 
 
 def json_internal_server_error() -> JsonResponse:
     """Create a JSON response for unexpected server failures."""
-    return JsonResponse(
+    return json_error(
         status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-        payload={"error": {"code": "internal_error", "message": "Internal server error"}},
+        code="internal_error",
+        message="Internal server error",
     )
