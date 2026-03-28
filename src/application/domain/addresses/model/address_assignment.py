@@ -8,7 +8,6 @@ from src.application.domain.shared.graph.model.graph_relationship import GraphRe
 from src.application.domain.shared.graph.model.node_id import NodeId
 from src.application.domain.addresses.model.related_entity_ref import RelatedEntityRef
 from src.application.domain.shared.graph.model.relationship_id import RelationshipId
-from src.application.infrastructure.context.trace_context import TraceContext
 
 
 @dataclass(slots=True)
@@ -23,7 +22,6 @@ class AddressAssignment(GraphRelationship):
     valid_to: datetime | None = None
     source: str | None = None
     note: str | None = None
-    trace_context: TraceContext | None = None
 
     def __post_init__(self) -> None:
         """Validate temporal and textual assignment invariants."""

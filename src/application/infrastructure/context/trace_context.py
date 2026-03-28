@@ -1,11 +1,11 @@
-"""Domain-level trace context without technical logging dependencies."""
+"""Infrastructure-level trace metadata used for observability across boundaries."""
 
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
 class TraceContext:
-    """Carries trace metadata for correlation and provenance in domain relations."""
+    """Carries optional technical trace identifiers for logs and integrations."""
 
     correlation_id: str | None = None
     causation_id: str | None = None
@@ -13,7 +13,7 @@ class TraceContext:
     source_channel: str | None = None
 
     def __post_init__(self) -> None:
-        """Validate trace fields when they are present."""
+        """Validate trace metadata fields when values are provided."""
         self._validate_optional_non_blank("correlation_id", self.correlation_id)
         self._validate_optional_non_blank("causation_id", self.causation_id)
         self._validate_optional_non_blank("source_system", self.source_system)

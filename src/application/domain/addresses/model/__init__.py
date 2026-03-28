@@ -19,7 +19,6 @@ from src.application.domain.addresses.model.related_entity_ref import RelatedEnt
 from src.application.domain.shared.graph.model.relationship_id import RelationshipId
 from src.application.domain.addresses.model.street import Street
 from src.application.domain.addresses.model.street_in_city import StreetInCity
-from src.application.infrastructure.context.trace_context import TraceContext
 
 __all__ = [
     "Address",
@@ -42,5 +41,4 @@ __all__ = [
     "RelationshipId",
     "Street",
     "StreetInCity",
-    "TraceContext",
 ]
