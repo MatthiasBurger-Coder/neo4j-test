@@ -3,11 +3,12 @@
 from dataclasses import dataclass
 
 from src.application.domain.addresses.model.address_unit_type import AddressUnitType
+from src.application.domain.addresses.model.graph_node import GraphNode
 from src.application.domain.addresses.model.node_id import NodeId
 
 
 @dataclass(slots=True)
-class AddressUnit:
+class AddressUnit(GraphNode):
     """Represents a structured address addition as an independent graph node."""
 
     id: NodeId

@@ -1,9 +1,9 @@
 """Enumeration for structured address unit categories."""
 
-from enum import StrEnum
+from enum import Enum
 
 
-class AddressUnitType(StrEnum):
+class AddressUnitType(str, Enum):
     """Defines standardized structured address unit categories."""
 
     BUILDING_SECTION = "BUILDING_SECTION"

@@ -2,11 +2,12 @@
 
 from dataclasses import dataclass
 
+from src.application.domain.addresses.model.graph_node import GraphNode
 from src.application.domain.addresses.model.node_id import NodeId
 
 
 @dataclass(slots=True)
-class Street:
+class Street(GraphNode):
     """Represents a street as an independent graph node."""
 
     id: NodeId
