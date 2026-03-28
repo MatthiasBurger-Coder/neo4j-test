@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import unittest
+from typing import TypeVar
 
 from src.application.infrastructure.neo4j.repository.adapter import (
     Neo4jReadRepositoryAdapter,
@@ -13,6 +14,9 @@ from src.application.infrastructure.neo4j.repository.contracts import (
 )
 from src.application.infrastructure.neo4j.repository.result import Neo4jExecutionResult, Neo4jQueryCounters
 from src.application.infrastructure.neo4j.repository.statement import CypherStatement
+
+
+TProjectedResult = TypeVar("TProjectedResult")
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,23 +42,53 @@ class _FakeRepositoryExecutor:
     def __init__(self) -> None:
         self.last_call = None
 
-    def execute_read(self, **kwargs):
-        self.last_call = ("read", kwargs)
-        return kwargs["result_projector"].project(
+    def execute_read(
+        self,
+        *,
+        repository_name: str,
+        operation_name: str,
+        statement: CypherStatement,
+        result_projector: Neo4jResultProjector[TProjectedResult],
+    ) -> TProjectedResult:
+        self.last_call = (
+            "read",
+            {
+                "repository_name": repository_name,
+                "operation_name": operation_name,
+                "statement": statement,
+                "result_projector": result_projector,
+            },
+        )
+        return result_projector.project(
             Neo4jExecutionResult(
-                statement_name=kwargs["statement"].name,
-                records=({"entity_id": kwargs["statement"].parameters["entity_id"]},),
+                statement_name=statement.name,
+                records=({"entity_id": statement.parameters["entity_id"]},),
                 keys=("entity_id",),
                 counters=Neo4jQueryCounters(),
             )
         )
 
-    def execute_write(self, **kwargs):
-        self.last_call = ("write", kwargs)
-        return kwargs["result_projector"].project(
+    def execute_write(
+        self,
+        *,
+        repository_name: str,
+        operation_name: str,
+        statement: CypherStatement,
+        result_projector: Neo4jResultProjector[TProjectedResult],
+    ) -> TProjectedResult:
+        self.last_call = (
+            "write",
+            {
+                "repository_name": repository_name,
+                "operation_name": operation_name,
+                "statement": statement,
+                "result_projector": result_projector,
+            },
+        )
+        return result_projector.project(
             Neo4jExecutionResult(
-                statement_name=kwargs["statement"].name,
-                records=({"entity_id": kwargs["statement"].parameters["entity_id"]},),
+                statement_name=statement.name,
+                records=({"entity_id": statement.parameters["entity_id"]},),
                 keys=("entity_id",),
                 counters=Neo4jQueryCounters(contains_updates=True),
             )
