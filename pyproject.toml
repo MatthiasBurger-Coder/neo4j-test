@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=80.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neo4j-test"
+version = "0.1.0"
+description = "Hexagonal Neo4j repository foundation for the neo4j-test project"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "neo4j>=6.1,<7.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.3,<9.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+exclude = ["tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
