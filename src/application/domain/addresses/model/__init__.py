@@ -12,14 +12,14 @@ from src.application.domain.addresses.model.address_unit_within_unit import Addr
 from src.application.domain.addresses.model.building import Building
 from src.application.domain.addresses.model.city import City
 from src.application.domain.addresses.model.geo_location import GeoLocation
-from src.application.domain.addresses.model.graph_node import GraphNode
-from src.application.domain.addresses.model.graph_relationship import GraphRelationship
-from src.application.domain.addresses.model.node_id import NodeId
+from src.application.domain.shared.graph.model.graph_node import GraphNode
+from src.application.domain.shared.graph.model.graph_relationship import GraphRelationship
+from src.application.domain.shared.graph.model.node_id import NodeId
 from src.application.domain.addresses.model.related_entity_ref import RelatedEntityRef, RelatedEntityType
-from src.application.domain.addresses.model.relationship_id import RelationshipId
+from src.application.domain.shared.graph.model.relationship_id import RelationshipId
 from src.application.domain.addresses.model.street import Street
 from src.application.domain.addresses.model.street_in_city import StreetInCity
-from src.application.domain.addresses.model.trace_context import TraceContext
+from src.application.infrastructure.context.trace_context import TraceContext
 
 __all__ = [
     "Address",

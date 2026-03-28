@@ -1,11 +1,11 @@
 import logging
 
-from src.application.context.application_context import ApplicationContext
 from src.application.infrastructure.logging.logger_factory import LoggerFactory
 from src.application.infrastructure.logging.logging_config import LoggingConfig
 from src.application.infrastructure.neo4j.config import Neo4jConfig
 from src.application.infrastructure.neo4j.connection_factory import Neo4jConnectionFactory
 from src.application.infrastructure.neo4j.session_provider import Neo4jSessionProvider
+from src.bootstrap.application_context import ApplicationContext
 
 
 class Application:
@@ -39,17 +39,3 @@ class Application:
         self._context.logger.info("Stopping application")
         self._context.session_provider.close()
         self._context.logger.info("Application stopped")
-
-def main() -> None:
-    app = Application()
-    context = app.start()
-
-    try:
-        context.logger.info("Program is running")
-        # start actual workflow here
-    finally:
-        app.stop()
-
-
-if __name__ == "__main__":
-    main()

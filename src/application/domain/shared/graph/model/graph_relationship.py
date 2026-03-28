@@ -2,8 +2,8 @@
 
 from abc import ABC
 
-from src.application.domain.addresses.model.relationship_id import RelationshipId
-from src.application.domain.addresses.model.trace_context import TraceContext
+from src.application.domain.shared.graph.model.relationship_id import RelationshipId
+from src.application.infrastructure.context.trace_context import TraceContext
 
 
 class GraphRelationship(ABC):
