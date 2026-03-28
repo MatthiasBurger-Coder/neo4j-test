@@ -1,11 +1,18 @@
-"""Domain node model for streets."""
+"""Domain node model for street nodes."""
 
 from dataclasses import dataclass
+
+from src.application.domain.addresses.model.node_id import NodeId
 
 
 @dataclass(slots=True)
 class Street:
-    """Represents a street as an independent domain node."""
+    """Represents a street as an independent graph node."""
 
-    id: str
+    id: NodeId
     name: str
+
+    def __post_init__(self) -> None:
+        """Validate mandatory street attributes."""
+        if self.name.strip() == "":
+            raise ValueError("Street name must not be blank")

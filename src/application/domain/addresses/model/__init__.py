@@ -11,7 +11,9 @@ from src.application.domain.addresses.model.address_unit_type import AddressUnit
 from src.application.domain.addresses.model.building import Building
 from src.application.domain.addresses.model.city import City
 from src.application.domain.addresses.model.geo_location import GeoLocation
+from src.application.domain.addresses.model.node_id import NodeId
 from src.application.domain.addresses.model.related_entity_ref import RelatedEntityRef, RelatedEntityType
+from src.application.domain.addresses.model.relationship_id import RelationshipId
 from src.application.domain.addresses.model.street import Street
 from src.application.domain.addresses.model.street_in_city import StreetInCity
 from src.application.domain.addresses.model.trace_context import TraceContext
@@ -28,8 +30,10 @@ __all__ = [
     "Building",
     "City",
     "GeoLocation",
+    "NodeId",
     "RelatedEntityRef",
     "RelatedEntityType",
+    "RelationshipId",
     "Street",
     "StreetInCity",
     "TraceContext",
