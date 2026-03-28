@@ -3,13 +3,7 @@ from src.infrastructure.bootstrap.application import Application
 
 def main() -> None:
     app = Application()
-    context = app.start()
-
-    try:
-        context.logger.info("Program is running")
-        # Start actual workflow here.
-    finally:
-        app.stop()
+    app.run_http()
 
 
 if __name__ == "__main__":

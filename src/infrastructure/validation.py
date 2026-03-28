@@ -14,4 +14,11 @@ def require_optional_non_blank(*, owner: str, field_name: str, value: str | None
     return None if value is None else require_non_blank(owner=owner, field_name=field_name, value=value)
 
 
+def require_positive_integer(*, owner: str, field_name: str, value: int) -> int:
+    """Return a validated positive integer value."""
+    if value <= 0:
+        raise ValueError(f"{owner} {field_name} must be greater than zero")
+    return value
+
+
 

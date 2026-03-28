@@ -5,6 +5,8 @@ import logging
 from src.adapters.outbound.persistence.neo4j.repository.executor import Neo4jRepositoryExecutor
 from src.adapters.outbound.persistence.neo4j.repository.operation import Neo4jRepositoryOperationContextFactory
 from src.infrastructure.context.correlation_id import CorrelationIdContext
+from src.infrastructure.http.config import HttpServerConfig
+from src.infrastructure.http.server import WsgiHttpServer
 from src.infrastructure.logging.logger_factory import LoggerFactory
 from src.infrastructure.logging.logging_config import LoggingConfig
 from src.infrastructure.neo4j.config import Neo4jConfig
@@ -12,6 +14,8 @@ from src.infrastructure.neo4j.connection_factory import Neo4jConnectionFactory
 from src.infrastructure.neo4j.session_provider import Neo4jSessionProvider
 from src.infrastructure.bootstrap.application_context import ApplicationContext
 from src.infrastructure.bootstrap.application_repositories import create_application_repositories
+from src.infrastructure.bootstrap.application_services import create_application_services
+from src.infrastructure.bootstrap.http_api import create_http_api
 from src.infrastructure.bootstrap.application_runtime import ApplicationRuntime
 
 
@@ -45,8 +49,12 @@ class Application:
         )
 
         self._runtime = ApplicationRuntime.from_resources(session_provider)
+        repositories = create_application_repositories(repository_executor=repository_executor)
+        services = create_application_services(repositories=repositories)
         self._context = ApplicationContext(
-            repositories=create_application_repositories(repository_executor=repository_executor),
+            repositories=repositories,
+            services=services,
+            http_api=create_http_api(services=services),
             logger=logger,
         )
 
@@ -63,6 +71,21 @@ class Application:
         self._runtime = None
         self._context = None
         LoggingConfig.shutdown()
+
+    def run_http(self) -> None:
+        """Start the JSON HTTP API and serve requests until interrupted."""
+        context = self.start()
+        server = WsgiHttpServer(
+            config=HttpServerConfig.from_env(),
+            wsgi_application=context.http_api,
+            logger=LoggerFactory.get_logger(WsgiHttpServer.__name__),
+        )
+
+        try:
+            server.serve_forever()
+        finally:
+            server.close()
+            self.stop()
 
 
 
