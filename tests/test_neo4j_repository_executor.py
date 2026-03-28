@@ -3,15 +3,16 @@
 from dataclasses import dataclass
 import unittest
 
-from src.application.infrastructure.context.correlation_id import CorrelationIdContext
-from src.application.infrastructure.neo4j.repository.access_mode import Neo4jAccessMode
-from src.application.infrastructure.neo4j.repository.contracts import Neo4jResultProjector
-from src.application.infrastructure.neo4j.repository.error import (
+from src.infrastructure.context.correlation_id import CorrelationIdContext
+from src.adapters.outbound.persistence.neo4j.repository.access_mode import Neo4jAccessMode
+from src.adapters.outbound.persistence.neo4j.repository.contracts import Neo4jResultProjector
+from src.adapters.outbound.persistence.neo4j.repository.error import (
     Neo4jReadRepositoryError,
     Neo4jWriteRepositoryError,
 )
-from src.application.infrastructure.neo4j.repository.executor import Neo4jRepositoryExecutor
-from src.application.infrastructure.neo4j.repository.statement import CypherStatement, CypherStatementTemplate
+from src.adapters.outbound.persistence.neo4j.repository.executor import Neo4jRepositoryExecutor
+from src.adapters.outbound.persistence.neo4j.repository.operation import Neo4jRepositoryOperationContextFactory
+from src.adapters.outbound.persistence.neo4j.repository.statement import CypherStatement, CypherStatementTemplate
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,6 +151,10 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
         session_provider = _FakeSessionProvider(session)
         executor = Neo4jRepositoryExecutor(
             session_provider,
+            context_factory=Neo4jRepositoryOperationContextFactory(
+                database_name=session_provider.database,
+                correlation_id_supplier=CorrelationIdContext.get,
+            ),
             query_factory=_FakeQueryFactory(),
             failure_classifier=_OSErrorFailureClassifier(),
         )
@@ -173,6 +178,10 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
         session_provider = _FakeSessionProvider(_FakeSession(_OSErrorTransaction()))
         executor = Neo4jRepositoryExecutor(
             session_provider,
+            context_factory=Neo4jRepositoryOperationContextFactory(
+                database_name=session_provider.database,
+                correlation_id_supplier=CorrelationIdContext.get,
+            ),
             query_factory=_FakeQueryFactory(),
             failure_classifier=_OSErrorFailureClassifier(),
         )
@@ -198,6 +207,10 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
         session_provider = _FakeSessionProvider(_FakeSession(transaction))
         executor = Neo4jRepositoryExecutor(
             session_provider,
+            context_factory=Neo4jRepositoryOperationContextFactory(
+                database_name=session_provider.database,
+                correlation_id_supplier=CorrelationIdContext.get,
+            ),
             query_factory=_FakeQueryFactory(),
             failure_classifier=_OSErrorFailureClassifier(),
         )
@@ -221,6 +234,10 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
         session_provider = _FakeSessionProvider(_FakeSession(_ValueErrorTransaction()))
         executor = Neo4jRepositoryExecutor(
             session_provider,
+            context_factory=Neo4jRepositoryOperationContextFactory(
+                database_name=session_provider.database,
+                correlation_id_supplier=CorrelationIdContext.get,
+            ),
             query_factory=_FakeQueryFactory(),
             failure_classifier=_OSErrorFailureClassifier(),
         )
@@ -242,3 +259,6 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+

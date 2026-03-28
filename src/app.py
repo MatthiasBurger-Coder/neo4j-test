@@ -1,4 +1,4 @@
-from src.bootstrap.application import Application
+from src.infrastructure.bootstrap.application import Application
 
 
 def main() -> None:
@@ -14,3 +14,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+

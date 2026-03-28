@@ -1,0 +1,2 @@
+"""Shared domain building blocks."""
+

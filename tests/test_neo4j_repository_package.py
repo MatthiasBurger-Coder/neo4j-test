@@ -6,19 +6,19 @@ import sys
 import unittest
 from unittest.mock import patch
 
-from src.application.infrastructure.neo4j.repository.access_mode import Neo4jAccessMode
-from src.application.infrastructure.neo4j.repository.error import Neo4jRepositoryConfigurationError
-from src.application.infrastructure.neo4j.repository.registry import Neo4jAccessModeRegistry
+from src.adapters.outbound.persistence.neo4j.repository.access_mode import Neo4jAccessMode
+from src.adapters.outbound.persistence.neo4j.repository.error import Neo4jRepositoryConfigurationError
+from src.adapters.outbound.persistence.neo4j.repository.registry import Neo4jAccessModeRegistry
 
 
 class Neo4jRepositoryPackageTest(unittest.TestCase):
     def test_repository_imports_stay_lightweight_when_neo4j_imports_are_blocked(self) -> None:
         guarded_modules = (
-            "src.application.infrastructure.neo4j.repository",
-            "src.application.infrastructure.neo4j.repository.executor",
-            "src.application.infrastructure.neo4j.repository.driver_integration",
-            "src.application.infrastructure.neo4j.session_provider",
-            "src.application.infrastructure.neo4j.connection_factory",
+            "src.adapters.outbound.persistence.neo4j.repository",
+            "src.adapters.outbound.persistence.neo4j.repository.executor",
+            "src.adapters.outbound.persistence.neo4j.repository.driver_integration",
+            "src.infrastructure.neo4j.session_provider",
+            "src.infrastructure.neo4j.connection_factory",
         )
         for module_name in guarded_modules:
             sys.modules.pop(module_name, None)
@@ -31,10 +31,10 @@ class Neo4jRepositoryPackageTest(unittest.TestCase):
             return original_import(name, globals, locals, fromlist, level)
 
         with patch("builtins.__import__", side_effect=guarded_import):
-            repository_package = importlib.import_module("src.application.infrastructure.neo4j.repository")
-            executor_module = importlib.import_module("src.application.infrastructure.neo4j.repository.executor")
-            session_provider_module = importlib.import_module("src.application.infrastructure.neo4j.session_provider")
-            connection_factory_module = importlib.import_module("src.application.infrastructure.neo4j.connection_factory")
+            repository_package = importlib.import_module("src.adapters.outbound.persistence.neo4j.repository")
+            executor_module = importlib.import_module("src.adapters.outbound.persistence.neo4j.repository.executor")
+            session_provider_module = importlib.import_module("src.infrastructure.neo4j.session_provider")
+            connection_factory_module = importlib.import_module("src.infrastructure.neo4j.connection_factory")
 
         self.assertEqual("CypherStatement", repository_package.CypherStatement.__name__)
         self.assertEqual("Neo4jRepositoryExecutor", executor_module.Neo4jRepositoryExecutor.__name__)
@@ -67,3 +67,6 @@ class Neo4jRepositoryPackageTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+

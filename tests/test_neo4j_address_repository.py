@@ -3,13 +3,13 @@
 import unittest
 from typing import TypeVar
 
-from src.application.domain.addresses.model.address import Address
-from src.application.domain.addresses.port.address_by_id_repository import FindAddressByIdQuery
-from src.application.domain.shared.graph.model.node_id import NodeId
-from src.application.infrastructure.neo4j.addresses.address_by_id_repository import Neo4jAddressByIdRepository
-from src.application.infrastructure.neo4j.repository.contracts import Neo4jResultProjector
-from src.application.infrastructure.neo4j.repository.result import Neo4jExecutionResult, Neo4jQueryCounters
-from src.application.infrastructure.neo4j.repository.statement import CypherStatement
+from src.domain.addresses.model.address import Address
+from src.domain.addresses.ports.address_by_id_repository import FindAddressByIdQuery
+from src.domain.shared.graph.model.node_id import NodeId
+from src.adapters.outbound.persistence.neo4j.addresses.address_by_id_repository import Neo4jAddressByIdRepository
+from src.adapters.outbound.persistence.neo4j.repository.contracts import Neo4jResultProjector
+from src.adapters.outbound.persistence.neo4j.repository.result import Neo4jExecutionResult, Neo4jQueryCounters
+from src.adapters.outbound.persistence.neo4j.repository.statement import CypherStatement
 
 
 TProjectedResult = TypeVar("TProjectedResult")
@@ -111,3 +111,6 @@ class Neo4jAddressByIdRepositoryTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+

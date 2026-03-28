@@ -4,16 +4,16 @@ from dataclasses import dataclass
 import unittest
 from typing import TypeVar
 
-from src.application.infrastructure.neo4j.repository.adapter import (
+from src.adapters.outbound.persistence.neo4j.repository.adapter import (
     Neo4jReadRepositoryAdapter,
     Neo4jWriteRepositoryAdapter,
 )
-from src.application.infrastructure.neo4j.repository.contracts import (
+from src.adapters.outbound.persistence.neo4j.repository.contracts import (
     CypherStatementBuilder,
     Neo4jResultProjector,
 )
-from src.application.infrastructure.neo4j.repository.result import Neo4jExecutionResult, Neo4jQueryCounters
-from src.application.infrastructure.neo4j.repository.statement import CypherStatement
+from src.adapters.outbound.persistence.neo4j.repository.result import Neo4jExecutionResult, Neo4jQueryCounters
+from src.adapters.outbound.persistence.neo4j.repository.statement import CypherStatement
 
 
 TProjectedResult = TypeVar("TProjectedResult")
@@ -137,3 +137,6 @@ class Neo4jRepositoryAdapterTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
