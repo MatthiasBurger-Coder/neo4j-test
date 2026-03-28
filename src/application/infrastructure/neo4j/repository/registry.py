@@ -5,7 +5,7 @@ from typing import Generic, Mapping, TypeVar
 
 from src.application.infrastructure.neo4j.repository.access_mode import Neo4jAccessMode
 from src.application.infrastructure.neo4j.repository.error import Neo4jRepositoryConfigurationError
-from src.application.infrastructure.neo4j.repository.validation import require_non_blank
+from src.application.infrastructure.validation import require_non_blank
 
 
 TEntry = TypeVar("TEntry")
@@ -31,6 +31,11 @@ class Neo4jAccessModeRegistry(Generic[TEntry]):
 
     def get(self, access_mode: Neo4jAccessMode) -> TEntry:
         """Return the configured entry for the requested access mode."""
+        if not isinstance(access_mode, Neo4jAccessMode):
+            raise Neo4jRepositoryConfigurationError(
+                f"{self.registry_name} received unsupported access mode {access_mode!r}"
+            )
+
         try:
             return self.entries[access_mode]
         except KeyError as error:
@@ -50,4 +55,10 @@ class Neo4jAccessModeRegistry(Generic[TEntry]):
         if missing_modes:
             raise Neo4jRepositoryConfigurationError(
                 f"{registry_name} is missing entries for access modes: {', '.join(missing_modes)}"
+            )
+
+        empty_entries = tuple(mode.value for mode, entry in entries.items() if entry is None)
+        if empty_entries:
+            raise Neo4jRepositoryConfigurationError(
+                f"{registry_name} contains empty entries for access modes: {', '.join(empty_entries)}"
             )

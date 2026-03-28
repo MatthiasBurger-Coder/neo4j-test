@@ -1,13 +1,22 @@
-from neo4j import Driver, READ_ACCESS, Session, WRITE_ACCESS
+"""Driver-backed Neo4j session provider isolated behind repository-facing contracts."""
+
+from typing import TYPE_CHECKING
 
 from src.application.infrastructure.logging.logger_factory import LoggerFactory
 from src.application.infrastructure.neo4j.config import Neo4jConfig
 from src.application.infrastructure.neo4j.repository.access_mode import Neo4jAccessMode
 from src.application.infrastructure.neo4j.repository.registry import Neo4jAccessModeRegistry
 
+if TYPE_CHECKING:
+    from neo4j import Driver, Session
+
 
 class Neo4jSessionProvider:
-    def __init__(self, driver: Driver, config: Neo4jConfig) -> None:
+    """Opens access-mode-specific driver sessions for the repository executor."""
+
+    def __init__(self, driver: "Driver", config: Neo4jConfig) -> None:
+        from neo4j import READ_ACCESS, WRITE_ACCESS
+
         self._driver = driver
         self._config = config
         self._logger = LoggerFactory.get_logger(self.__class__.__name__)
@@ -23,7 +32,7 @@ class Neo4jSessionProvider:
     def database(self) -> str:
         return self._config.database
 
-    def open_session(self, access_mode: Neo4jAccessMode) -> Session:
+    def open_session(self, access_mode: Neo4jAccessMode) -> "Session":
         self._logger.debug(
             "Opening Neo4j session for database=%s mode=%s",
             self._config.database,

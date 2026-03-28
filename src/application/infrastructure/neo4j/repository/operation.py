@@ -5,7 +5,7 @@ from typing import Callable
 
 from src.application.infrastructure.context.correlation_id import CorrelationIdContext
 from src.application.infrastructure.neo4j.repository.access_mode import Neo4jAccessMode
-from src.application.infrastructure.neo4j.repository.validation import require_non_blank
+from src.application.infrastructure.validation import require_non_blank
 
 
 CorrelationIdSupplier = Callable[[], str]

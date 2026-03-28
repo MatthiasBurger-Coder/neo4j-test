@@ -1,12 +1,26 @@
 """Internal runtime resources owned by the application bootstrap."""
 
 from dataclasses import dataclass
+from typing import Protocol
 
-from src.application.infrastructure.neo4j.session_provider import Neo4jSessionProvider
+
+class ClosableResource(Protocol):
+    """Minimal technical lifecycle contract for runtime resources."""
+
+    def close(self) -> None:
+        """Release the underlying technical resource."""
 
 
 @dataclass(frozen=True, slots=True)
 class ApplicationRuntime:
-    """Holds technical runtime resources that should not leak into the application context."""
+    """Holds internal runtime resources without exposing infrastructure types to the context."""
 
-    session_provider: Neo4jSessionProvider
+    resources: tuple[ClosableResource, ...]
+
+    @classmethod
+    def from_resources(cls, *resources: ClosableResource) -> "ApplicationRuntime":
+        return cls(resources=tuple(resources))
+
+    def close(self) -> None:
+        for resource in reversed(self.resources):
+            resource.close()

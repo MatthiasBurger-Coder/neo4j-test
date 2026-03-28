@@ -1,15 +1,24 @@
-from neo4j import Driver, GraphDatabase
+"""Factory for driver-backed Neo4j connections."""
+
+from typing import TYPE_CHECKING
 
 from src.application.infrastructure.logging.logger_factory import LoggerFactory
 from src.application.infrastructure.neo4j.config import Neo4jConfig
 
+if TYPE_CHECKING:
+    from neo4j import Driver
+
 
 class Neo4jConnectionFactory:
+    """Creates verified Neo4j drivers from validated infrastructure configuration."""
+
     def __init__(self, config: Neo4jConfig) -> None:
         self._config = config
         self._logger = LoggerFactory.get_logger(self.__class__.__name__)
 
-    def create_driver(self) -> Driver:
+    def create_driver(self) -> "Driver":
+        from neo4j import GraphDatabase
+
         self._logger.info("Creating Neo4j driver for uri=%s database=%s", self._config.uri, self._config.database)
 
         driver = GraphDatabase.driver(
@@ -22,5 +31,4 @@ class Neo4jConnectionFactory:
 
         driver.verify_connectivity()
         self._logger.info("Neo4j connectivity verified successfully")
-
         return driver

@@ -85,6 +85,29 @@ class Neo4jAddressByIdRepositoryTest(unittest.TestCase):
 
         self.assertIsNone(result)
 
+    def test_repository_raises_descriptive_error_when_required_result_field_is_missing(self) -> None:
+        repository = Neo4jAddressByIdRepository(
+            _PreparedReadExecutor(
+                Neo4jExecutionResult(
+                    statement_name="address.find_by_id",
+                    records=(
+                        {
+                            "address_id": "addr-1",
+                            "latitude": 52.52,
+                            "longitude": 13.405,
+                        },
+                    ),
+                    keys=("address_id", "latitude", "longitude"),
+                    counters=Neo4jQueryCounters(),
+                )
+            )
+        )
+
+        with self.assertRaises(ValueError) as raised_error:
+            repository.execute(FindAddressByIdQuery(address_id=NodeId("addr-1")))
+
+        self.assertIn("required field 'house_number'", str(raised_error.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

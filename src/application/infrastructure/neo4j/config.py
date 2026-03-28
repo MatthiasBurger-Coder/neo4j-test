@@ -1,8 +1,10 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
+
+from src.application.infrastructure.validation import require_non_blank
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class Neo4jConfig:
     uri: str
     username: str
@@ -11,6 +13,44 @@ class Neo4jConfig:
     max_connection_lifetime: int = 3600
     max_connection_pool_size: int = 50
     connection_acquisition_timeout: int = 30
+
+    def __post_init__(self) -> None:
+        """Validate connection settings before they are consumed by infrastructure adapters."""
+        object.__setattr__(
+            self,
+            "uri",
+            require_non_blank(owner=self.__class__.__name__, field_name="uri", value=self.uri),
+        )
+        object.__setattr__(
+            self,
+            "username",
+            require_non_blank(owner=self.__class__.__name__, field_name="username", value=self.username),
+        )
+        object.__setattr__(
+            self,
+            "password",
+            require_non_blank(owner=self.__class__.__name__, field_name="password", value=self.password),
+        )
+        object.__setattr__(
+            self,
+            "database",
+            require_non_blank(owner=self.__class__.__name__, field_name="database", value=self.database),
+        )
+        _require_positive_integer(
+            owner=self.__class__.__name__,
+            field_name="max_connection_lifetime",
+            value=self.max_connection_lifetime,
+        )
+        _require_positive_integer(
+            owner=self.__class__.__name__,
+            field_name="max_connection_pool_size",
+            value=self.max_connection_pool_size,
+        )
+        _require_positive_integer(
+            owner=self.__class__.__name__,
+            field_name="connection_acquisition_timeout",
+            value=self.connection_acquisition_timeout,
+        )
 
     @staticmethod
     def from_env() -> "Neo4jConfig":
@@ -23,3 +63,8 @@ class Neo4jConfig:
             max_connection_pool_size=int(os.getenv("NEO4J_MAX_CONNECTION_POOL_SIZE", "50")),
             connection_acquisition_timeout=int(os.getenv("NEO4J_CONNECTION_ACQUISITION_TIMEOUT", "30")),
         )
+
+
+def _require_positive_integer(*, owner: str, field_name: str, value: int) -> None:
+    if value <= 0:
+        raise ValueError(f"{owner} {field_name} must be greater than zero")

@@ -1,6 +1,7 @@
+"""Application composition root."""
+
 import logging
 
-from src.application.infrastructure.neo4j.addresses.address_by_id_repository import Neo4jAddressByIdRepository
 from src.application.infrastructure.logging.logger_factory import LoggerFactory
 from src.application.infrastructure.logging.logging_config import LoggingConfig
 from src.application.infrastructure.neo4j.config import Neo4jConfig
@@ -8,11 +9,13 @@ from src.application.infrastructure.neo4j.connection_factory import Neo4jConnect
 from src.application.infrastructure.neo4j.repository.executor import Neo4jRepositoryExecutor
 from src.application.infrastructure.neo4j.session_provider import Neo4jSessionProvider
 from src.bootstrap.application_context import ApplicationContext
-from src.bootstrap.application_repositories import AddressRepositories, ApplicationRepositories
+from src.bootstrap.application_repositories import create_application_repositories
 from src.bootstrap.application_runtime import ApplicationRuntime
 
 
 class Application:
+    """Bootstraps the runtime and exposes only application-facing entry points."""
+
     def __init__(self) -> None:
         self._context: ApplicationContext | None = None
         self._runtime: ApplicationRuntime | None = None
@@ -31,15 +34,10 @@ class Application:
         driver = connection_factory.create_driver()
         session_provider = Neo4jSessionProvider(driver, config)
         repository_executor = Neo4jRepositoryExecutor(session_provider)
-        repositories = ApplicationRepositories(
-            addresses=AddressRepositories(
-                by_id=Neo4jAddressByIdRepository(repository_executor),
-            )
-        )
-        self._runtime = ApplicationRuntime(session_provider=session_provider)
 
+        self._runtime = ApplicationRuntime.from_resources(session_provider)
         self._context = ApplicationContext(
-            repositories=repositories,
+            repositories=create_application_repositories(repository_executor=repository_executor),
             logger=logger,
         )
 
@@ -51,7 +49,7 @@ class Application:
             return
 
         self._context.logger.info("Stopping application")
-        self._runtime.session_provider.close()
+        self._runtime.close()
         self._context.logger.info("Application stopped")
         self._runtime = None
         self._context = None

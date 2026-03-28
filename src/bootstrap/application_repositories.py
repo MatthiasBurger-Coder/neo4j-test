@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 
 from src.application.domain.addresses.port.address_by_id_repository import AddressByIdRepositoryPort
+from src.application.infrastructure.neo4j.addresses.address_by_id_repository import Neo4jAddressByIdRepository
+from src.application.infrastructure.neo4j.repository.contracts import Neo4jRepositoryExecutorProtocol
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,3 +19,15 @@ class ApplicationRepositories:
     """Groups concrete repository ports exposed to the running application."""
 
     addresses: AddressRepositories
+
+
+def create_application_repositories(
+    *,
+    repository_executor: Neo4jRepositoryExecutorProtocol,
+) -> ApplicationRepositories:
+    """Create the application-facing repository bundle from infrastructure adapters."""
+    return ApplicationRepositories(
+        addresses=AddressRepositories(
+            by_id=Neo4jAddressByIdRepository(repository_executor),
+        )
+    )

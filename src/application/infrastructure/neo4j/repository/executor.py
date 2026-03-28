@@ -1,16 +1,25 @@
-"""Transactional Neo4j repository executor with logging and error translation."""
+"""Transactional Neo4j repository executor with centralized logging and isolated driver integration."""
 
+import logging
 from time import perf_counter
-from typing import Mapping, Protocol, TypeVar
-
-from neo4j import ManagedTransaction, Query
-from neo4j.exceptions import DriverError, Neo4jError
+from typing import Mapping, TypeVar
 
 from src.application.infrastructure.logging.logger_factory import LoggerFactory
 from src.application.infrastructure.neo4j.repository.access_mode import Neo4jAccessMode
-from src.application.infrastructure.neo4j.repository.contracts import Neo4jResultProjector
+from src.application.infrastructure.neo4j.repository.contracts import (
+    Neo4jExecutionFailureClassifierProtocol,
+    Neo4jQueryFactoryProtocol,
+    Neo4jRepositoryExecutorProtocol,
+    Neo4jResultCursorProtocol,
+    Neo4jResultProjector,
+    Neo4jSessionProviderProtocol,
+    Neo4jTransactionProtocol,
+)
+from src.application.infrastructure.neo4j.repository.driver_integration import (
+    Neo4jDriverExecutionFailureClassifier,
+    Neo4jDriverQueryFactory,
+)
 from src.application.infrastructure.neo4j.repository.error_translation import Neo4jRepositoryErrorTranslator
-from src.application.infrastructure.neo4j.repository.logging import Neo4jOperationLogger
 from src.application.infrastructure.neo4j.repository.operation import (
     Neo4jRepositoryOperationContext,
     Neo4jRepositoryOperationContextFactory,
@@ -24,37 +33,35 @@ from src.application.infrastructure.neo4j.repository.strategy import (
 )
 
 
-class Neo4jSessionProviderProtocol(Protocol):
-    """Abstraction for opening access-mode-specific Neo4j sessions."""
-
-    database: str
-
-    def open_session(self, access_mode: Neo4jAccessMode): ...
-
-
 TResult = TypeVar("TResult")
 
 
-class Neo4jRepositoryExecutor:
-    """Coordinates session lifecycle, transaction strategy, logging, and errors."""
+class Neo4jRepositoryExecutor(Neo4jRepositoryExecutorProtocol):
+    """Coordinates session lifecycle, transaction strategy, logging, and error translation."""
 
     def __init__(
         self,
         session_provider: Neo4jSessionProviderProtocol,
         *,
         context_factory: Neo4jRepositoryOperationContextFactory | None = None,
-        operation_logger: Neo4jOperationLogger | None = None,
         error_translator: Neo4jRepositoryErrorTranslator | None = None,
-        transaction_strategies: Mapping[Neo4jAccessMode, Neo4jTransactionExecutionStrategy[Neo4jExecutionResult]] | None = None,
+        logger: logging.Logger | None = None,
+        query_factory: Neo4jQueryFactoryProtocol | None = None,
+        failure_classifier: Neo4jExecutionFailureClassifierProtocol | None = None,
+        transaction_strategies: Mapping[
+            Neo4jAccessMode,
+            Neo4jTransactionExecutionStrategy[Neo4jExecutionResult],
+        ]
+        | None = None,
     ) -> None:
         self._session_provider = session_provider
         self._context_factory = context_factory or Neo4jRepositoryOperationContextFactory(
             database_name=session_provider.database
         )
-        self._operation_logger = operation_logger or Neo4jOperationLogger(
-            LoggerFactory.get_logger(self.__class__.__name__)
-        )
         self._error_translator = error_translator or Neo4jRepositoryErrorTranslator()
+        self._logger = logger or LoggerFactory.get_logger(self.__class__.__name__)
+        self._query_factory = query_factory or Neo4jDriverQueryFactory()
+        self._failure_classifier = failure_classifier or Neo4jDriverExecutionFailureClassifier()
         self._transaction_strategies = Neo4jAccessModeRegistry(
             registry_name=f"{self.__class__.__name__} transaction strategies",
             entries=transaction_strategies or default_transaction_strategies(),
@@ -109,8 +116,8 @@ class Neo4jRepositoryExecutor:
             access_mode=access_mode,
             statement_name=statement.name,
         )
-        started_at = self._operation_logger.start_timer()
-        self._operation_logger.log_started(context, statement)
+        started_at = perf_counter()
+        self._log_started(context=context, statement=statement)
 
         execution_result = self._execute_statement(statement=statement, context=context, started_at=started_at)
         return self._project_result(
@@ -139,19 +146,21 @@ class Neo4jRepositoryExecutor:
                         context=context,
                     ),
                 )
-        except (Neo4jError, DriverError, OSError) as error:
-            duration_ms = self._duration_ms(started_at)
-            self._operation_logger.log_failed(
-                context,
-                duration_ms=duration_ms,
+        except Exception as error:
+            if not self._failure_classifier.is_execution_failure(error):
+                raise
+
+            self._log_failed(
+                context=context,
+                duration_ms=self._duration_ms(started_at),
                 failure_stage="execution",
                 error=error,
             )
-            translated_error = self._error_translator.translate(
+            raise self._error_translator.translate(
                 context=context,
                 failure_stage="execution",
-            )
-            raise translated_error from error
+                technical_message=self._describe_error(error),
+            ) from error
 
     def _project_result(
         self,
@@ -164,23 +173,21 @@ class Neo4jRepositoryExecutor:
         try:
             projected_result = result_projector.project(execution_result)
         except Exception as error:
-            duration_ms = self._duration_ms(started_at)
-            self._operation_logger.log_failed(
-                context,
-                duration_ms=duration_ms,
+            self._log_failed(
+                context=context,
+                duration_ms=self._duration_ms(started_at),
                 failure_stage="projection",
                 error=error,
             )
-            translated_error = self._error_translator.translate(
+            raise self._error_translator.translate(
                 context=context,
                 failure_stage="projection",
-            )
-            raise translated_error from error
+                technical_message=self._describe_error(error),
+            ) from error
 
-        duration_ms = self._duration_ms(started_at)
-        self._operation_logger.log_succeeded(
-            context,
-            duration_ms=duration_ms,
+        self._log_succeeded(
+            context=context,
+            duration_ms=self._duration_ms(started_at),
             record_count=execution_result.record_count,
         )
         return projected_result
@@ -188,12 +195,12 @@ class Neo4jRepositoryExecutor:
     def _run_statement(
         self,
         *,
-        transaction: ManagedTransaction,
+        transaction: Neo4jTransactionProtocol,
         statement: CypherStatement,
         context: Neo4jRepositoryOperationContext,
     ) -> Neo4jExecutionResult:
-        query = Query(
-            statement.cypher,
+        query = self._query_factory.create(
+            cypher=statement.cypher,
             metadata={
                 "correlation_id": context.correlation_id,
                 "repository_name": context.repository_name,
@@ -202,13 +209,21 @@ class Neo4jRepositoryExecutor:
             },
         )
         query_result = transaction.run(query, statement.parameters)
+        return self._materialize_result(query_result=query_result, statement_name=statement.name)
+
+    def _materialize_result(
+        self,
+        *,
+        query_result: Neo4jResultCursorProtocol,
+        statement_name: str,
+    ) -> Neo4jExecutionResult:
         keys = tuple(query_result.keys())
         records = tuple(record.data() for record in query_result)
         summary = query_result.consume()
         counters = summary.counters
 
         return Neo4jExecutionResult(
-            statement_name=statement.name,
+            statement_name=statement_name,
             records=records,
             keys=keys,
             counters=Neo4jQueryCounters(
@@ -228,6 +243,65 @@ class Neo4jRepositoryExecutor:
             ),
             query_type=summary.query_type,
             database=getattr(summary, "database", None),
+        )
+
+    def _log_started(self, *, context: Neo4jRepositoryOperationContext, statement: CypherStatement) -> None:
+        self._logger.info(
+            "Neo4j operation started | repository=%s | operation=%s | mode=%s | statement=%s | database=%s | parameter_keys=%s",
+            context.repository_name,
+            context.operation_name,
+            context.access_mode.value,
+            statement.name,
+            context.database_name,
+            tuple(statement.parameters.keys()),
+        )
+
+    def _log_succeeded(
+        self,
+        *,
+        context: Neo4jRepositoryOperationContext,
+        duration_ms: float,
+        record_count: int,
+    ) -> None:
+        self._logger.info(
+            "Neo4j operation succeeded | repository=%s | operation=%s | mode=%s | statement=%s | database=%s | duration_ms=%.3f | record_count=%s",
+            context.repository_name,
+            context.operation_name,
+            context.access_mode.value,
+            context.statement_name,
+            context.database_name,
+            duration_ms,
+            record_count,
+        )
+
+    def _log_failed(
+        self,
+        *,
+        context: Neo4jRepositoryOperationContext,
+        duration_ms: float,
+        failure_stage: str,
+        error: Exception,
+    ) -> None:
+        self._logger.error(
+            "Neo4j operation failed | repository=%s | operation=%s | mode=%s | statement=%s | database=%s | duration_ms=%.3f | stage=%s | error_type=%s | error=%s",
+            context.repository_name,
+            context.operation_name,
+            context.access_mode.value,
+            context.statement_name,
+            context.database_name,
+            duration_ms,
+            failure_stage,
+            error.__class__.__name__,
+            error,
+        )
+
+    @staticmethod
+    def _describe_error(error: BaseException) -> str:
+        error_message = str(error).strip()
+        return (
+            f"{error.__class__.__name__}: {error_message}"
+            if error_message != ""
+            else error.__class__.__name__
         )
 
     @staticmethod

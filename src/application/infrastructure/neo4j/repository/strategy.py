@@ -1,23 +1,14 @@
 """Transaction execution strategies for Neo4j read and write operations."""
 
 from abc import ABC, abstractmethod
-from typing import Callable, Generic, Mapping, Protocol, TypeVar
+from collections.abc import Callable, Mapping
+from typing import Generic, TypeVar
 
 from src.application.infrastructure.neo4j.repository.access_mode import Neo4jAccessMode
+from src.application.infrastructure.neo4j.repository.contracts import Neo4jTransactionProtocol, Neo4jTransactionSessionProtocol
 
 
 TResult = TypeVar("TResult")
-TTransaction = TypeVar("TTransaction")
-
-
-class Neo4jSessionProtocol(Protocol[TTransaction]):
-    """Opaque session contract needed by transaction strategies."""
-
-    def execute_read(self, work: Callable[[TTransaction], TResult]) -> TResult:
-        """Execute work inside a read transaction."""
-
-    def execute_write(self, work: Callable[[TTransaction], TResult]) -> TResult:
-        """Execute work inside a write transaction."""
 
 
 class Neo4jTransactionExecutionStrategy(ABC, Generic[TResult]):
@@ -26,7 +17,11 @@ class Neo4jTransactionExecutionStrategy(ABC, Generic[TResult]):
     access_mode: Neo4jAccessMode
 
     @abstractmethod
-    def execute(self, session: Neo4jSessionProtocol[object], work: Callable[[object], TResult]) -> TResult:
+    def execute(
+        self,
+        session: Neo4jTransactionSessionProtocol,
+        work: Callable[[Neo4jTransactionProtocol], TResult],
+    ) -> TResult:
         """Execute transactional work inside a session."""
 
 
@@ -35,7 +30,11 @@ class Neo4jReadTransactionExecutionStrategy(Neo4jTransactionExecutionStrategy[TR
 
     access_mode = Neo4jAccessMode.READ
 
-    def execute(self, session: Neo4jSessionProtocol[object], work: Callable[[object], TResult]) -> TResult:
+    def execute(
+        self,
+        session: Neo4jTransactionSessionProtocol,
+        work: Callable[[Neo4jTransactionProtocol], TResult],
+    ) -> TResult:
         return session.execute_read(work)
 
 
@@ -44,7 +43,11 @@ class Neo4jWriteTransactionExecutionStrategy(Neo4jTransactionExecutionStrategy[T
 
     access_mode = Neo4jAccessMode.WRITE
 
-    def execute(self, session: Neo4jSessionProtocol[object], work: Callable[[object], TResult]) -> TResult:
+    def execute(
+        self,
+        session: Neo4jTransactionSessionProtocol,
+        work: Callable[[Neo4jTransactionProtocol], TResult],
+    ) -> TResult:
         return session.execute_write(work)
 
 

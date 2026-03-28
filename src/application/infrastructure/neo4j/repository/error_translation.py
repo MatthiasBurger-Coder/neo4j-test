@@ -21,6 +21,7 @@ class Neo4jRepositoryErrorFactory(Protocol):
         *,
         context: Neo4jRepositoryOperationContext,
         failure_stage: str,
+        technical_message: str,
     ) -> Neo4jRepositoryError:
         """Create a concrete repository error for the current access mode."""
 
@@ -33,11 +34,13 @@ class Neo4jReadRepositoryErrorFactory:
         *,
         context: Neo4jRepositoryOperationContext,
         failure_stage: str,
+        technical_message: str,
     ) -> Neo4jRepositoryError:
         return Neo4jReadRepositoryError(
             message="Neo4j read repository operation failed",
             context=context,
             failure_stage=failure_stage,
+            technical_message=technical_message,
         )
 
 
@@ -49,11 +52,13 @@ class Neo4jWriteRepositoryErrorFactory:
         *,
         context: Neo4jRepositoryOperationContext,
         failure_stage: str,
+        technical_message: str,
     ) -> Neo4jRepositoryError:
         return Neo4jWriteRepositoryError(
             message="Neo4j write repository operation failed",
             context=context,
             failure_stage=failure_stage,
+            technical_message=technical_message,
         )
 
 
@@ -82,6 +87,11 @@ class Neo4jRepositoryErrorTranslator:
         *,
         context: Neo4jRepositoryOperationContext,
         failure_stage: str,
+        technical_message: str,
     ) -> Neo4jRepositoryError:
         """Build the correct repository error based on the operation access mode."""
-        return self.factories.get(context.access_mode).create(context=context, failure_stage=failure_stage)
+        return self.factories.get(context.access_mode).create(
+            context=context,
+            failure_stage=failure_stage,
+            technical_message=technical_message,
+        )

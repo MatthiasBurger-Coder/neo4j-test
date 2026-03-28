@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
-from src.application.infrastructure.neo4j.repository.validation import require_non_blank
+from src.application.infrastructure.validation import require_non_blank
 
 
 CypherParameters = Mapping[str, Any]

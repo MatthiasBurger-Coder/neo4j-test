@@ -1,7 +1,5 @@
 """Neo4j repository implementation for loading addresses by identifier."""
 
-from typing import Any, Mapping
-
 from src.application.domain.addresses.model.address import Address
 from src.application.domain.addresses.model.geo_location import GeoLocation
 from src.application.domain.addresses.port.address_by_id_repository import (
@@ -15,7 +13,7 @@ from src.application.infrastructure.neo4j.repository.contracts import (
     Neo4jRepositoryExecutorProtocol,
     Neo4jResultProjector,
 )
-from src.application.infrastructure.neo4j.repository.result import Neo4jExecutionResult
+from src.application.infrastructure.neo4j.repository.result import Neo4jExecutionResult, require_row_value
 from src.application.infrastructure.neo4j.repository.statement import CypherStatement, CypherStatementTemplate
 
 
@@ -46,7 +44,7 @@ class AddressByIdResultProjector(Neo4jResultProjector[Address | None]):
         return _ADDRESS_RESULT_HANDLERS.get(
             execution_result.record_count,
             _raise_ambiguous_address_result,
-        )(execution_result.records)
+        )(execution_result)
 
 
 class Neo4jAddressByIdRepository(
@@ -65,22 +63,39 @@ class Neo4jAddressByIdRepository(
         )
 
 
-def _return_no_address(records: tuple[Mapping[str, Any], ...]) -> Address | None:
-    del records
+def _return_no_address(execution_result: Neo4jExecutionResult) -> Address | None:
+    del execution_result
     return None
 
 
-def _map_single_address(records: tuple[Mapping[str, Any], ...]) -> Address:
-    record = records[0]
+def _map_single_address(execution_result: Neo4jExecutionResult) -> Address:
+    record = execution_result.records[0]
     return Address(
-        id=NodeId(str(record["address_id"])),
-        house_number=str(record["house_number"]),
+        id=NodeId(
+            str(
+                require_row_value(
+                    statement_name=execution_result.statement_name,
+                    row=record,
+                    field_name="address_id",
+                )
+            )
+        ),
+        house_number=str(
+            require_row_value(
+                statement_name=execution_result.statement_name,
+                row=record,
+                field_name="house_number",
+            )
+        ),
         geo_location=_create_geo_location(record.get("latitude"), record.get("longitude")),
     )
 
 
-def _raise_ambiguous_address_result(records: tuple[Mapping[str, Any], ...]) -> Address | None:
-    raise ValueError(f"Expected at most one address record but received {len(records)}")
+def _raise_ambiguous_address_result(execution_result: Neo4jExecutionResult) -> Address | None:
+    raise ValueError(
+        f"Statement '{execution_result.statement_name}' expected at most one address record "
+        f"but received {execution_result.record_count}"
+    )
 
 
 def _create_geo_location(latitude: object, longitude: object) -> GeoLocation | None:

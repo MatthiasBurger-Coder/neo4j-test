@@ -41,3 +41,13 @@ class Neo4jExecutionResult:
     def record_count(self) -> int:
         """Return the number of rows materialized for the executed statement."""
         return len(self.records)
+
+
+def require_row_value(*, statement_name: str, row: CypherRow, field_name: str) -> Any:
+    """Return a required row value or raise a descriptive projection error."""
+    try:
+        return row[field_name]
+    except KeyError as error:
+        raise ValueError(
+            f"Statement '{statement_name}' did not return required field '{field_name}'"
+        ) from error

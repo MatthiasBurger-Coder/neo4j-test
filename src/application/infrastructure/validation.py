@@ -1,4 +1,4 @@
-"""Shared validation helpers for Neo4j repository infrastructure."""
+"""Shared infrastructure validation helpers."""
 
 
 def require_non_blank(*, owner: str, field_name: str, value: str) -> str:

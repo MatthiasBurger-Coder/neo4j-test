@@ -38,6 +38,22 @@ class _FakeSummary:
     database: str = "neo4j"
 
 
+class _FakeQuery:
+    def __init__(self, text: str, metadata: dict[str, object]) -> None:
+        self.text = text
+        self.metadata = metadata
+
+
+class _FakeQueryFactory:
+    def create(self, *, cypher: str, metadata: dict[str, object]) -> _FakeQuery:
+        return _FakeQuery(text=cypher, metadata=dict(metadata))
+
+
+class _OSErrorFailureClassifier:
+    def is_execution_failure(self, error: BaseException) -> bool:
+        return isinstance(error, OSError)
+
+
 class _FakeRecord:
     def __init__(self, payload: dict[str, object]) -> None:
         self._payload = payload
@@ -72,9 +88,16 @@ class _FakeTransaction:
         return _FakeQueryResult(self._records)
 
 
-class _FailingTransaction:
+class _OSErrorTransaction:
     def run(self, query, parameters):
+        del query, parameters
         raise OSError("database unavailable")
+
+
+class _ValueErrorTransaction:
+    def run(self, query, parameters):
+        del query, parameters
+        raise ValueError("unexpected mapper failure")
 
 
 class _FakeSession:
@@ -112,6 +135,7 @@ class _DictionaryProjector(Neo4jResultProjector[list[dict[str, object]]]):
 
 class _ExplodingProjector(Neo4jResultProjector[object]):
     def project(self, execution_result):
+        del execution_result
         raise ValueError("projection failed")
 
 
@@ -124,7 +148,11 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
         transaction = _FakeTransaction(records=[{"person_id": "p-1"}])
         session = _FakeSession(transaction)
         session_provider = _FakeSessionProvider(session)
-        executor = Neo4jRepositoryExecutor(session_provider)
+        executor = Neo4jRepositoryExecutor(
+            session_provider,
+            query_factory=_FakeQueryFactory(),
+            failure_classifier=_OSErrorFailureClassifier(),
+        )
 
         result = executor.execute_read(
             repository_name="PersonReadRepository",
@@ -142,8 +170,12 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
         self.assertEqual("person.find_by_id", transaction.last_query.metadata["statement_name"])
 
     def test_execute_write_translates_execution_failures(self) -> None:
-        session_provider = _FakeSessionProvider(_FakeSession(_FailingTransaction()))
-        executor = Neo4jRepositoryExecutor(session_provider)
+        session_provider = _FakeSessionProvider(_FakeSession(_OSErrorTransaction()))
+        executor = Neo4jRepositoryExecutor(
+            session_provider,
+            query_factory=_FakeQueryFactory(),
+            failure_classifier=_OSErrorFailureClassifier(),
+        )
 
         with self.assertRaises(Neo4jWriteRepositoryError) as raised_error:
             executor.execute_write(
@@ -159,11 +191,16 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
 
         self.assertIn("stage=execution", str(raised_error.exception))
         self.assertIn("statement=person.save", str(raised_error.exception))
+        self.assertIn("technical_error=OSError: database unavailable", str(raised_error.exception))
 
     def test_execute_read_translates_projection_failures(self) -> None:
         transaction = _FakeTransaction(records=[{"person_id": "p-1"}])
         session_provider = _FakeSessionProvider(_FakeSession(transaction))
-        executor = Neo4jRepositoryExecutor(session_provider)
+        executor = Neo4jRepositoryExecutor(
+            session_provider,
+            query_factory=_FakeQueryFactory(),
+            failure_classifier=_OSErrorFailureClassifier(),
+        )
 
         with self.assertRaises(Neo4jReadRepositoryError) as raised_error:
             executor.execute_read(
@@ -178,6 +215,29 @@ class Neo4jRepositoryExecutorTest(unittest.TestCase):
             )
 
         self.assertIn("stage=projection", str(raised_error.exception))
+        self.assertIn("technical_error=ValueError: projection failed", str(raised_error.exception))
+
+    def test_execute_read_keeps_unclassified_execution_errors_visible(self) -> None:
+        session_provider = _FakeSessionProvider(_FakeSession(_ValueErrorTransaction()))
+        executor = Neo4jRepositoryExecutor(
+            session_provider,
+            query_factory=_FakeQueryFactory(),
+            failure_classifier=_OSErrorFailureClassifier(),
+        )
+
+        with self.assertRaises(ValueError) as raised_error:
+            executor.execute_read(
+                repository_name="PersonReadRepository",
+                operation_name="execute",
+                statement=CypherStatement(
+                    name="person.find_by_id",
+                    cypher="MATCH (p:Person {id: $person_id}) RETURN p.id AS person_id",
+                    parameters={"person_id": "p-1"},
+                ),
+                result_projector=_DictionaryProjector(),
+            )
+
+        self.assertEqual("unexpected mapper failure", str(raised_error.exception))
 
 
 if __name__ == "__main__":
