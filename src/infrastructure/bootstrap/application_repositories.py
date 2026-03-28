@@ -2,16 +2,18 @@
 
 from dataclasses import dataclass
 
-from src.domain.addresses.ports.address_by_id_repository import AddressByIdRepositoryPort
-from src.adapters.outbound.persistence.neo4j.addresses.address_by_id_repository import Neo4jAddressByIdRepository
+from src.adapters.outbound.persistence.neo4j.addresses.address_read_adapter import (
+    Neo4jAddressReadAdapter,
+)
 from src.adapters.outbound.persistence.neo4j.repository.contracts import Neo4jRepositoryExecutorProtocol
+from src.domain.addresses.ports.address_read_repository import AddressReadRepositoryPort
 
 
 @dataclass(frozen=True, slots=True)
 class AddressRepositories:
     """Provides address-related repository entry points to the application."""
 
-    by_id: AddressByIdRepositoryPort
+    read: AddressReadRepositoryPort
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,7 +30,7 @@ def create_application_repositories(
     """Create the application-facing repository bundle from infrastructure adapters."""
     return ApplicationRepositories(
         addresses=AddressRepositories(
-            by_id=Neo4jAddressByIdRepository(repository_executor),
+            read=Neo4jAddressReadAdapter(repository_executor),
         )
     )
 

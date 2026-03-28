@@ -1,11 +1,11 @@
 """Address-specific domain ports."""
 
-from src.domain.addresses.ports.address_by_id_repository import (
-    AddressByIdRepositoryPort,
-    FindAddressByIdQuery,
+from src.domain.addresses.ports.address_read_repository import (
+    AddressReadCriteria,
+    AddressReadRepositoryPort,
 )
 
-__all__ = ["AddressByIdRepositoryPort", "FindAddressByIdQuery"]
+__all__ = ["AddressReadCriteria", "AddressReadRepositoryPort"]
 
 
 
