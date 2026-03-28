@@ -7,6 +7,7 @@ from src.application.infrastructure.neo4j.repository.contracts import (
     Neo4jRepositoryExecutorProtocol,
     Neo4jResultProjector,
 )
+from src.application.infrastructure.neo4j.repository.validation import require_non_blank
 from src.application.port.outbound.repository.read_repository import ReadRepositoryPort
 from src.application.port.outbound.repository.write_repository import WriteRepositoryPort
 
@@ -27,8 +28,16 @@ class Neo4jReadRepositoryAdapter(ReadRepositoryPort[TRequest, TResult], Generic[
         result_projector: Neo4jResultProjector[TResult],
         repository_executor: Neo4jRepositoryExecutorProtocol,
     ) -> None:
-        self._repository_name = self._require_non_blank("repository_name", repository_name)
-        self._operation_name = self._require_non_blank("operation_name", operation_name)
+        self._repository_name = require_non_blank(
+            owner=self.__class__.__name__,
+            field_name="repository_name",
+            value=repository_name,
+        )
+        self._operation_name = require_non_blank(
+            owner=self.__class__.__name__,
+            field_name="operation_name",
+            value=operation_name,
+        )
         self._statement_builder = statement_builder
         self._result_projector = result_projector
         self._repository_executor = repository_executor
@@ -43,13 +52,6 @@ class Neo4jReadRepositoryAdapter(ReadRepositoryPort[TRequest, TResult], Generic[
             result_projector=self._result_projector,
         )
 
-    @staticmethod
-    def _require_non_blank(field_name: str, value: str) -> str:
-        normalized_value = value.strip()
-        if normalized_value == "":
-            raise ValueError(f"Neo4jReadRepositoryAdapter {field_name} must not be blank")
-        return normalized_value
-
 
 class Neo4jWriteRepositoryAdapter(WriteRepositoryPort[TRequest, TResult], Generic[TRequest, TResult]):
     """Base implementation for write-oriented Neo4j repository adapters."""
@@ -63,8 +65,16 @@ class Neo4jWriteRepositoryAdapter(WriteRepositoryPort[TRequest, TResult], Generi
         result_projector: Neo4jResultProjector[TResult],
         repository_executor: Neo4jRepositoryExecutorProtocol,
     ) -> None:
-        self._repository_name = self._require_non_blank("repository_name", repository_name)
-        self._operation_name = self._require_non_blank("operation_name", operation_name)
+        self._repository_name = require_non_blank(
+            owner=self.__class__.__name__,
+            field_name="repository_name",
+            value=repository_name,
+        )
+        self._operation_name = require_non_blank(
+            owner=self.__class__.__name__,
+            field_name="operation_name",
+            value=operation_name,
+        )
         self._statement_builder = statement_builder
         self._result_projector = result_projector
         self._repository_executor = repository_executor
@@ -78,10 +88,3 @@ class Neo4jWriteRepositoryAdapter(WriteRepositoryPort[TRequest, TResult], Generi
             statement=statement,
             result_projector=self._result_projector,
         )
-
-    @staticmethod
-    def _require_non_blank(field_name: str, value: str) -> str:
-        normalized_value = value.strip()
-        if normalized_value == "":
-            raise ValueError(f"Neo4jWriteRepositoryAdapter {field_name} must not be blank")
-        return normalized_value

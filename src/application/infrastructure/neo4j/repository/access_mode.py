@@ -8,3 +8,8 @@ class Neo4jAccessMode(str, Enum):
 
     READ = "read"
     WRITE = "write"
+
+    @classmethod
+    def all(cls) -> tuple["Neo4jAccessMode", ...]:
+        """Return all defined access modes in declaration order."""
+        return tuple(cls)

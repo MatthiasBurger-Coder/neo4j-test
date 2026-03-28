@@ -3,6 +3,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
+from src.application.infrastructure.neo4j.repository.validation import require_non_blank
+
 
 CypherParameters = Mapping[str, Any]
 
@@ -17,15 +19,10 @@ class CypherStatement:
 
     def __post_init__(self) -> None:
         """Validate statement metadata and copy input parameters defensively."""
-        self._require_non_blank("name", self.name)
-        self._require_non_blank("cypher", self.cypher)
+        require_non_blank(owner=self.__class__.__name__, field_name="name", value=self.name)
+        require_non_blank(owner=self.__class__.__name__, field_name="cypher", value=self.cypher)
         object.__setattr__(self, "parameters", dict(self.parameters))
         self._validate_parameter_keys()
-
-    @staticmethod
-    def _require_non_blank(field_name: str, value: str) -> None:
-        if value.strip() == "":
-            raise ValueError(f"CypherStatement {field_name} must not be blank")
 
     def _validate_parameter_keys(self) -> None:
         for key in self.parameters:
@@ -42,10 +39,8 @@ class CypherStatementTemplate:
 
     def __post_init__(self) -> None:
         """Validate template metadata before it can be used for binding."""
-        if self.name.strip() == "":
-            raise ValueError("CypherStatementTemplate name must not be blank")
-        if self.cypher.strip() == "":
-            raise ValueError("CypherStatementTemplate cypher must not be blank")
+        require_non_blank(owner=self.__class__.__name__, field_name="name", value=self.name)
+        require_non_blank(owner=self.__class__.__name__, field_name="cypher", value=self.cypher)
 
     def bind(self, parameters: CypherParameters | None = None) -> CypherStatement:
         """Bind statement parameters without leaking raw Cypher strings across the codebase."""

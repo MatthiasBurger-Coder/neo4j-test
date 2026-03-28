@@ -10,6 +10,7 @@ from src.application.infrastructure.neo4j.repository.error import (
     Neo4jWriteRepositoryError,
 )
 from src.application.infrastructure.neo4j.repository.operation import Neo4jRepositoryOperationContext
+from src.application.infrastructure.neo4j.repository.registry import Neo4jAccessModeRegistry
 
 
 class Neo4jRepositoryErrorFactory(Protocol):
@@ -60,14 +61,21 @@ class Neo4jWriteRepositoryErrorFactory:
 class Neo4jRepositoryErrorTranslator:
     """Dispatches exception creation without leaking branching into callers."""
 
-    factories: Mapping[Neo4jAccessMode, Neo4jRepositoryErrorFactory]
+    factories: Neo4jAccessModeRegistry[Neo4jRepositoryErrorFactory]
 
     def __init__(self, factories: Mapping[Neo4jAccessMode, Neo4jRepositoryErrorFactory] | None = None) -> None:
         resolved_factories = factories or {
             Neo4jAccessMode.READ: Neo4jReadRepositoryErrorFactory(),
             Neo4jAccessMode.WRITE: Neo4jWriteRepositoryErrorFactory(),
         }
-        object.__setattr__(self, "factories", dict(resolved_factories))
+        object.__setattr__(
+            self,
+            "factories",
+            Neo4jAccessModeRegistry(
+                registry_name=self.__class__.__name__,
+                entries=resolved_factories,
+            ),
+        )
 
     def translate(
         self,
@@ -76,4 +84,4 @@ class Neo4jRepositoryErrorTranslator:
         failure_stage: str,
     ) -> Neo4jRepositoryError:
         """Build the correct repository error based on the operation access mode."""
-        return self.factories[context.access_mode].create(context=context, failure_stage=failure_stage)
+        return self.factories.get(context.access_mode).create(context=context, failure_stage=failure_stage)

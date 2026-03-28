@@ -1,7 +1,7 @@
 """Composable contracts for building statements, projecting results, and executing repository work."""
 
 from abc import ABC, abstractmethod
-from typing import Generic, Protocol, TypeVar
+from typing import Generic, Protocol, TypeVar, runtime_checkable
 
 from src.application.infrastructure.neo4j.repository.result import Neo4jExecutionResult
 from src.application.infrastructure.neo4j.repository.statement import CypherStatement
@@ -28,6 +28,7 @@ class Neo4jResultProjector(ABC, Generic[TResult]):
         """Convert a plain Neo4j execution result into the adapter output model."""
 
 
+@runtime_checkable
 class Neo4jRepositoryExecutorProtocol(Protocol):
     """Structural contract for repository executors used by the adapter base classes."""
 

@@ -3,6 +3,10 @@
 from src.application.infrastructure.neo4j.repository.operation import Neo4jRepositoryOperationContext
 
 
+class Neo4jRepositoryConfigurationError(RuntimeError):
+    """Raised when repository infrastructure is configured incompletely or inconsistently."""
+
+
 class Neo4jRepositoryError(RuntimeError):
     """Base error raised when the Neo4j repository infrastructure fails."""
 

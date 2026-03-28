@@ -15,6 +15,7 @@ from src.application.infrastructure.neo4j.repository.operation import (
     Neo4jRepositoryOperationContext,
     Neo4jRepositoryOperationContextFactory,
 )
+from src.application.infrastructure.neo4j.repository.registry import Neo4jAccessModeRegistry
 from src.application.infrastructure.neo4j.repository.result import Neo4jExecutionResult, Neo4jQueryCounters
 from src.application.infrastructure.neo4j.repository.statement import CypherStatement
 from src.application.infrastructure.neo4j.repository.strategy import (
@@ -54,7 +55,10 @@ class Neo4jRepositoryExecutor:
             LoggerFactory.get_logger(self.__class__.__name__)
         )
         self._error_translator = error_translator or Neo4jRepositoryErrorTranslator()
-        self._transaction_strategies = dict(transaction_strategies or default_transaction_strategies())
+        self._transaction_strategies = Neo4jAccessModeRegistry(
+            registry_name=f"{self.__class__.__name__} transaction strategies",
+            entries=transaction_strategies or default_transaction_strategies(),
+        )
 
     def execute_read(
         self,
@@ -123,7 +127,7 @@ class Neo4jRepositoryExecutor:
         context: Neo4jRepositoryOperationContext,
         started_at: float,
     ) -> Neo4jExecutionResult:
-        transaction_strategy = self._transaction_strategies[context.access_mode]
+        transaction_strategy = self._transaction_strategies.get(context.access_mode)
 
         try:
             with self._session_provider.open_session(context.access_mode) as session:
