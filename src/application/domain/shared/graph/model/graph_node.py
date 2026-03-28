@@ -2,7 +2,7 @@
 
 from abc import ABC
 
-from src.application.domain.addresses.model.node_id import NodeId
+from src.application.domain.shared.graph.model.node_id import NodeId
 
 
 class GraphNode(ABC):

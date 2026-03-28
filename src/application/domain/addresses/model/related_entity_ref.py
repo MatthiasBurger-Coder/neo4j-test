@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from src.application.domain.addresses.model.node_id import NodeId
+from src.application.domain.shared.graph.model.node_id import NodeId
 
 
 class RelatedEntityType(str, Enum):

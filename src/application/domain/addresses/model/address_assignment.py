@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from src.application.domain.addresses.model.address_relation_type import AddressRelationType
-from src.application.domain.addresses.model.graph_relationship import GraphRelationship
-from src.application.domain.addresses.model.node_id import NodeId
+from src.application.domain.shared.graph.model.graph_relationship import GraphRelationship
+from src.application.domain.shared.graph.model.node_id import NodeId
 from src.application.domain.addresses.model.related_entity_ref import RelatedEntityRef
-from src.application.domain.addresses.model.relationship_id import RelationshipId
-from src.application.domain.addresses.model.trace_context import TraceContext
+from src.application.domain.shared.graph.model.relationship_id import RelationshipId
+from src.application.infrastructure.context.trace_context import TraceContext
 
 
 @dataclass(slots=True)

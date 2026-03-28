@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 
 from src.application.domain.addresses.model.geo_location import GeoLocation
-from src.application.domain.addresses.model.graph_node import GraphNode
-from src.application.domain.addresses.model.node_id import NodeId
+from src.application.domain.shared.graph.model.graph_node import GraphNode
+from src.application.domain.shared.graph.model.node_id import NodeId
 
 
 @dataclass(slots=True)
