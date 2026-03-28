@@ -1,6 +1,8 @@
 import logging
 import sys
 
+from src.application.infrastructure.logging.correlation_id_log_filter import CorrelationIdLogFilter
+
 
 class LoggingConfig:
     @staticmethod
@@ -14,10 +16,11 @@ class LoggingConfig:
         handler.setLevel(level)
 
         formatter = logging.Formatter(
-            fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+            fmt="%(asctime)s | %(levelname)-8s | %(name)s | correlation_id=%(correlation_id)s | %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
         handler.setFormatter(formatter)
+        handler.addFilter(CorrelationIdLogFilter())
 
         root_logger.setLevel(level)
         root_logger.addHandler(handler)

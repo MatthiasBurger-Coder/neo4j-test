@@ -4,6 +4,7 @@ from src.application.infrastructure.logging.logger_factory import LoggerFactory
 from src.application.infrastructure.logging.logging_config import LoggingConfig
 from src.application.infrastructure.neo4j.config import Neo4jConfig
 from src.application.infrastructure.neo4j.connection_factory import Neo4jConnectionFactory
+from src.application.infrastructure.neo4j.repository.executor import Neo4jRepositoryExecutor
 from src.application.infrastructure.neo4j.session_provider import Neo4jSessionProvider
 from src.bootstrap.application_context import ApplicationContext
 
@@ -22,10 +23,12 @@ class Application:
         connection_factory = Neo4jConnectionFactory(config)
         driver = connection_factory.create_driver()
         session_provider = Neo4jSessionProvider(driver, config)
+        repository_executor = Neo4jRepositoryExecutor(session_provider)
 
         self._context = ApplicationContext(
             config=config,
             session_provider=session_provider,
+            repository_executor=repository_executor,
             logger=logger,
         )
 
