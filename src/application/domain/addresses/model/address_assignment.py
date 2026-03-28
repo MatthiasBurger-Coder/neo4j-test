@@ -45,9 +45,9 @@ class AddressAssignment(GraphRelationship):
         return True
 
     def _default_reference_time(self) -> datetime:
-        """Determine a timezone-aware default for activity checks."""
-        if self.valid_from is not None and self.valid_from.tzinfo is not None:
+        """Determine a default reference time matching assignment timezone semantics."""
+        if self.valid_from is not None:
             return datetime.now(self.valid_from.tzinfo)
-        if self.valid_to is not None and self.valid_to.tzinfo is not None:
+        if self.valid_to is not None:
             return datetime.now(self.valid_to.tzinfo)
         return datetime.now(timezone.utc)
