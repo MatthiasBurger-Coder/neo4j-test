@@ -1,3 +1,5 @@
+"""Infrastructure helper for storing request correlation IDs in context-local state."""
+
 import uuid
 from contextvars import ContextVar
 
@@ -6,6 +8,8 @@ _correlation_id: ContextVar[str] = ContextVar("correlation_id", default="-")
 
 
 class CorrelationIdContext:
+    """Provides technical correlation ID lifecycle operations for runtime context."""
+
     @staticmethod
     def get() -> str:
         return _correlation_id.get()

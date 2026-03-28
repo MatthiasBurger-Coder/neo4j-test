@@ -27,5 +27,4 @@ class LoggingConfig:
     @staticmethod
     def shutdown() -> None:
         logging.info("Shutting down logging configuration")
-        root_logger = logging.getLogger()
-        root_logger.handlers = []
+        logging.shutdown()

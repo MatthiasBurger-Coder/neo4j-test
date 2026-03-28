@@ -39,3 +39,4 @@ class Application:
         self._context.logger.info("Stopping application")
         self._context.session_provider.close()
         self._context.logger.info("Application stopped")
+        LoggingConfig.shutdown()
