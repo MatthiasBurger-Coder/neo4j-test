@@ -106,7 +106,7 @@ class AddressHttpController:
             )
             return json_internal_server_error()
 
-        return json_created(self._response_mapper.map_one(address))
+        return json_created(self._response_mapper.map_created_context(address))
 
 
 _REQUEST_ERROR_RESPONSES = {
