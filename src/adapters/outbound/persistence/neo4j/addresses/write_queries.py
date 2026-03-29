@@ -104,37 +104,24 @@ SET address.house_number = $address.house_number,
 MERGE (address)-[address_on_street:ADDRESS_ON_STREET {merge_key: $address_on_street_merge_key}]->(street)
   ON CREATE SET address_on_street.id = randomUUID()
 
-CALL {
-  WITH address, $building AS building_data
-  WITH address, building_data
-  WHERE building_data IS NOT NULL
-  MERGE (building:Building {merge_key: building_data.merge_key})
+FOREACH (_ IN CASE WHEN $building IS NULL THEN [] ELSE [1] END |
+  MERGE (building:Building {merge_key: $building.merge_key})
     ON CREATE SET building.id = randomUUID()
-  SET building.name = building_data.name,
-      building.latitude = building_data.latitude,
-      building.longitude = building_data.longitude
-  MERGE (address)-[address_in_building:ADDRESS_IN_BUILDING {merge_key: building_data.relationship_merge_key}]->(building)
+  SET building.name = $building.name,
+      building.latitude = $building.latitude,
+      building.longitude = $building.longitude
+  MERGE (address)-[address_in_building:ADDRESS_IN_BUILDING {merge_key: $building.relationship_merge_key}]->(building)
     ON CREATE SET address_in_building.id = randomUUID()
-  RETURN
-    building.id AS building_id,
-    building.name AS building_name,
-    building.latitude AS building_latitude,
-    building.longitude AS building_longitude,
-    address_in_building.id AS address_in_building_id
-  UNION
-  WITH address, building_data
-  WHERE building_data IS NULL
-  RETURN
-    NULL AS building_id,
-    NULL AS building_name,
-    NULL AS building_latitude,
-    NULL AS building_longitude,
-    NULL AS address_in_building_id
-}
+)
+
+OPTIONAL MATCH (address)-[address_in_building:ADDRESS_IN_BUILDING]->(building:Building)
+WHERE $building IS NOT NULL AND address_in_building.merge_key = $building.relationship_merge_key
+
+WITH address, street, city, address_on_street, street_in_city, building, address_in_building
 
 CALL {
-  WITH address, $units AS unit_rows
-  UNWIND unit_rows AS unit_row
+  WITH address
+  UNWIND $units AS unit_row
   MERGE (unit:AddressUnit {merge_key: unit_row.merge_key})
     ON CREATE SET unit.id = randomUUID()
   SET unit.unit_type = unit_row.unit_type,
@@ -153,8 +140,7 @@ CALL {
 }
 
 CALL {
-  WITH $unit_hierarchy AS hierarchy_rows
-  UNWIND hierarchy_rows AS hierarchy_row
+  UNWIND $unit_hierarchy AS hierarchy_row
   MATCH (parent_unit:AddressUnit {merge_key: hierarchy_row.parent_unit_merge_key})
   MATCH (child_unit:AddressUnit {merge_key: hierarchy_row.child_unit_merge_key})
   MERGE (parent_unit)-[unit_within_unit:ADDRESS_UNIT_WITHIN_UNIT {merge_key: hierarchy_row.merge_key}]->(child_unit)
@@ -169,8 +155,8 @@ CALL {
 }
 
 CALL {
-  WITH address, $assignments AS assignment_rows
-  UNWIND assignment_rows AS assignment_row
+  WITH address
+  UNWIND $assignments AS assignment_row
   MERGE (related_entity:RelatedEntity {merge_key: assignment_row.related_entity_merge_key})
     ON CREATE SET related_entity.id = assignment_row.related_entity_id
   SET related_entity.entity_type = assignment_row.related_entity_type,
@@ -209,11 +195,11 @@ RETURN
   city.postal_code AS city_postal_code,
   address_on_street.id AS address_on_street_id,
   street_in_city.id AS street_in_city_id,
-  building_id,
-  building_name,
-  building_latitude,
-  building_longitude,
-  address_in_building_id,
+  building.id AS building_id,
+  building.name AS building_name,
+  building.latitude AS building_latitude,
+  building.longitude AS building_longitude,
+  address_in_building.id AS address_in_building_id,
   units,
   unit_hierarchy,
   assignments
